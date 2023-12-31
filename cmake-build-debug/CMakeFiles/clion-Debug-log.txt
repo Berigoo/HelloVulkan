@@ -1,0 +1,4 @@
+/disk0/app/clion/bin/cmake/linux/x64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/disk0/app/clion/bin/ninja/linux/x64/ninja -G Ninja -S /disk0/clionProject/hakureiEngine -B /disk0/clionProject/hakureiEngine/cmake-build-debug
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /disk0/clionProject/hakureiEngine/cmake-build-debug
