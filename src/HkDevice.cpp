@@ -4,9 +4,6 @@
 
 #include "HkDevice.h"
 
-#include <utility>
-#include <set>
-
 HkDevice::HkDevice() {
     // creating instance
     VkApplicationInfo appInfo{};

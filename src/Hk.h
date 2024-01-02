@@ -8,4 +8,5 @@
 #endif //HAKUREIENGINE_HK_H
 
 #include "HkDevice.h"
+#include "XcbSurface.h"
 #include "HkUtility.h"
