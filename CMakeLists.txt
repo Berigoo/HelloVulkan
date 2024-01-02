@@ -3,4 +3,4 @@ project(hakureiEngine)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(hakureiEngine main.cpp src/HkDevice.cpp src/HkDevice.h src/HkUtility.h src/HkUtility.cpp)
+add_executable(hakureiEngine main.cpp src/HkDevice.cpp src/HkDevice.h src/HkUtility.h src/HkUtility.cpp src/Hk.h src/XcbSurface.cpp src/XcbSurface.h)
