@@ -1,3 +1,6 @@
+/disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/HkDevice.dir
+/disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/HkUtility.dir
+/disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/XcbSurface.dir
 /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/hakureiEngine.dir
 /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/edit_cache.dir
 /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/rebuild_cache.dir

@@ -11,7 +11,10 @@
 #include <stdexcept>
 #include <map>
 #include <spdlog/spdlog.h>
+#include "HkDevice.h"
 
+// TODO create loop
+//  dynamic loop (later)
 class XcbSurface {
 private:
     xcb_connection_t* conn;
@@ -36,7 +39,7 @@ public:
     void updateWindowProperty(std::string property, std::string changeInto, std::string name);
     /// create vulkan surface for xcb
     /// \param instance vulkan instance
-    void createSurface(VkInstance instance);
+    void createSurface(HkDevice *hkDevice);
 
     VkSurfaceKHR* getSurface();
 private:

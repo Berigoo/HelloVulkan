@@ -48,12 +48,12 @@ void XcbSurface::updateWindowProperty(std::string property, std::string changeIn
     xcb_change_property(conn, XCB_PROP_MODE_REPLACE, windowId, propAtom, XCB_ATOM_ATOM, 32, 1, &atoms[name]);
 }
 
-void XcbSurface::createSurface(VkInstance instance) {
+void XcbSurface::createSurface(HkDevice *hkDevice) {
     VkXcbSurfaceCreateInfoKHR info{};
     info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     info.connection = conn;
     info.window = windowId;
-    if(vkCreateXcbSurfaceKHR(instance, &info, nullptr, &surface) != VK_SUCCESS){
+    if(vkCreateXcbSurfaceKHR(hkDevice->getInstance(), &info, nullptr, &surface) != VK_SUCCESS){
         throw std::runtime_error("failed create xcb surface!");
     }
 }

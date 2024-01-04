@@ -4,33 +4,41 @@
 
 #include "HkDevice.h"
 
-HkDevice::HkDevice() {
-    // creating instance
-    VkApplicationInfo appInfo{};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Basic App";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "Hakurei Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
-
-    VkInstanceCreateInfo instanceCreateInfo{};
-    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    instanceCreateInfo.enabledLayerCount = 0;
-    if(enableValidationLayer && checkLayerSupport()){
-        instanceCreateInfo.enabledLayerCount = requiredLayers.size();
-        instanceCreateInfo.ppEnabledLayerNames = requiredLayers.data();
-
-        // debug object
-        VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
-        debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        debugInfo.pfnUserCallback = debugCallback;
-
-        instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugInfo;
-    }
-    vkCreateInstance(&instanceCreateInfo, nullptr, &instance);
+HkDevice::HkDevice(std::vector<const char *> *requiredLayers, std::vector<const char *> *requiredExtensions) {
+//    this->requiredLayers = requiredLayers;
+//    this->requiredInstanceExtensions = requiredExtensions;
+//    // creating instance
+//    VkApplicationInfo appInfo{};
+//    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+//    appInfo.pApplicationName = "Basic App";
+//    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+//    appInfo.pEngineName = "Hakurei Engine";
+//    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+//    appInfo.apiVersion = VK_API_VERSION_1_0;
+//
+//    VkInstanceCreateInfo instanceCreateInfo{};
+//    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+//    instanceCreateInfo.enabledLayerCount = 0;
+//    if(enableValidationLayer && checkLayerSupport()){
+//        spdlog::set_level(spdlog::level::trace);
+//        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t >(requiredLayers->size());
+//        instanceCreateInfo.ppEnabledLayerNames = requiredLayers->data();
+//
+//        // debug object
+//        VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
+//        debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+//        debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+//        debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+//        debugInfo.pfnUserCallback = debugCallback;
+//
+//        instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugInfo;
+//    }
+//    instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t >(requiredExtensions->size());
+//    instanceCreateInfo.ppEnabledExtensionNames = requiredExtensions->data();
+//
+//    if(vkCreateInstance(&instanceCreateInfo, nullptr, instance) != VK_SUCCESS){
+//        throw std::runtime_error("failed to create vulkan instance");
+//    }
 }
 
 bool HkDevice::checkLayerSupport() {
@@ -40,7 +48,7 @@ bool HkDevice::checkLayerSupport() {
     std::vector<VkLayerProperties> propLayers;
     vkEnumerateInstanceLayerProperties(&propCount, propLayers.data());
 
-    for(auto reqLayer : requiredLayers){
+    for(auto reqLayer : *requiredLayers){
         for(uint32_t i=0; i<propLayers.size(); i++){
             if(reqLayer == propLayers[i].layerName) break;
             else if(i == propLayers.size()-1){
@@ -54,10 +62,6 @@ bool HkDevice::checkLayerSupport() {
 
 HkDevice::HkDevice(VkInstance instance) {
 
-}
-
-void HkDevice::setRequiredLayers(std::vector<const char *> reqLayers) {
-    requiredLayers = std::move(reqLayers);
 }
 
 bool HkDevice::pickPhysicalDevice(VkQueueFlagBits flags, VkSurfaceKHR surface) {
@@ -78,7 +82,13 @@ bool HkDevice::pickPhysicalDevice(VkQueueFlagBits flags, VkSurfaceKHR surface) {
             isSwapchainSupported = !swapchainSupport.formats.empty() && !swapchainSupport.presentModes.empty();
         }
 
-        if(indices.isCompelete() && isExtsSupported && isSwapchainSupported) return true;
+        if(indices.isCompelete() && isExtsSupported && isSwapchainSupported){
+            physicalDevice = phyDev;
+            VkPhysicalDeviceProperties props;
+            vkGetPhysicalDeviceProperties(phyDev, &props);
+            spdlog::debug("picked physical device name : {}", props.deviceName);
+            return true;
+        }
     }
     return false;
 }
@@ -117,17 +127,15 @@ bool HkDevice::checkExtensionsSupport(VkPhysicalDevice physicalDevice1) {
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
     vkEnumerateDeviceExtensionProperties(physicalDevice1, nullptr, &extensionCount, availableExtensions.data());
 
-    std::set<std::string> requiredExtensions1(requiredExtensions.begin(), requiredExtensions.end());
+    std::set<std::string> requiredExtensions1(requiredDeviceExtensions->begin(), requiredDeviceExtensions->end());
 
+    spdlog::trace("physical device exts support");
     for(auto ext : availableExtensions){
+        spdlog::trace("\t{}", ext.extensionName);
         requiredExtensions1.erase(ext.extensionName);
     }
 
     return requiredExtensions1.empty();
-}
-
-void HkDevice::setRequiredExtensions(std::vector<const char *> reqExtensions) {
-    requiredExtensions = std::move(reqExtensions);
 }
 
 SwapchainSupportDetails HkDevice::findSwapchainSupport(VkPhysicalDevice physicalDevice1, VkSurfaceKHR surface) {
@@ -150,8 +158,80 @@ SwapchainSupportDetails HkDevice::findSwapchainSupport(VkPhysicalDevice physical
     return holder;
 }
 
+VkPhysicalDevice *HkDevice::getPhysicalDevice() {
+    if(physicalDevice) return &physicalDevice;
+    else{
+        spdlog::warn("physical device null");
+        return nullptr;
+    }
+}
+
+HkDevice::HkDevice() {
+
+}
+
+void HkDevice::setRequiredLayers(std::vector<const char *> *layers) {
+    if(!layers) spdlog::warn("layers null");
+    this->requiredLayers = layers;
+}
+
+void HkDevice::setRequiredDeviceExtensions(std::vector<const char *> *exts) {
+    if(!exts) spdlog::warn("device extensions null");
+    this->requiredDeviceExtensions = exts;
+}
+
+void HkDevice::setRequiredInstanceExtensions(std::vector<const char *> *exts) {
+    if(!exts) spdlog::warn("instance extensions null");
+    requiredInstanceExtensions = exts;
+}
+
+std::vector<const char *>* HkDevice::getRequiredInstanceExtensions() {
+    return requiredInstanceExtensions;
+}
+
+void HkDevice::createInstance() {
+    // creating instance
+    VkApplicationInfo appInfo{};
+    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    appInfo.pApplicationName = "Basic App";
+    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.pEngineName = "Hakurei Engine";
+    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+    appInfo.apiVersion = VK_API_VERSION_1_0;
+
+    VkInstanceCreateInfo instanceCreateInfo{};
+    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    instanceCreateInfo.enabledLayerCount = 0;
+    instanceCreateInfo.pApplicationInfo = &appInfo;
+    if(enableValidationLayer && checkLayerSupport()){
+        spdlog::set_level(spdlog::level::trace);
+        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t >(requiredLayers->size());
+        instanceCreateInfo.ppEnabledLayerNames = requiredLayers->data();
+
+        // debug object
+        VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
+        debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugInfo.pfnUserCallback = debugCallback;
+
+        instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugInfo;
+    }
+    instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t >(requiredInstanceExtensions->size());
+    instanceCreateInfo.ppEnabledExtensionNames = requiredInstanceExtensions->data();
+
+    if(vkCreateInstance(&instanceCreateInfo, nullptr, &instance) != VK_SUCCESS){
+        throw std::runtime_error("failed to create vulkan instance");
+    }
+}
+
+VkInstance HkDevice::getInstance() {
+    return instance;
+}
+
 VkBool32
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
               const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
-   spdlog::debug(pCallbackData->pMessage);
+   spdlog::debug("msg : {}", pCallbackData->pMessage);
+   return VK_FALSE;
 }

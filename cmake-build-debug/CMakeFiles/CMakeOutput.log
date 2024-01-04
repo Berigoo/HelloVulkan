@@ -369,3 +369,51 @@ Parsed CXX implicit link information from above output:
   implicit fwks: []
 
 
+Determining if the function XOpenDisplay exists in the /usr/lib/libX11.so;/usr/lib/libXext.so passed with the following output:
+Change Dir: /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-M49Jti
+
+Run Build Command(s):/disk0/app/clion/bin/ninja/linux/x64/ninja cmTC_ad547 && [1/2] Building C object CMakeFiles/cmTC_ad547.dir/CheckFunctionExists.c.o
+[2/2] Linking C executable cmTC_ad547
+
+
+
+Determining if the function gethostbyname exists passed with the following output:
+Change Dir: /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-tnQPLs
+
+Run Build Command(s):/disk0/app/clion/bin/ninja/linux/x64/ninja cmTC_b1a3a && [1/2] Building C object CMakeFiles/cmTC_b1a3a.dir/CheckFunctionExists.c.o
+[2/2] Linking C executable cmTC_b1a3a
+
+
+
+Determining if the function connect exists passed with the following output:
+Change Dir: /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-szO6NM
+
+Run Build Command(s):/disk0/app/clion/bin/ninja/linux/x64/ninja cmTC_2403f && [1/2] Building C object CMakeFiles/cmTC_2403f.dir/CheckFunctionExists.c.o
+[2/2] Linking C executable cmTC_2403f
+
+
+
+Determining if the function remove exists passed with the following output:
+Change Dir: /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-DsU9nT
+
+Run Build Command(s):/disk0/app/clion/bin/ninja/linux/x64/ninja cmTC_1909c && [1/2] Building C object CMakeFiles/cmTC_1909c.dir/CheckFunctionExists.c.o
+[2/2] Linking C executable cmTC_1909c
+
+
+
+Determining if the function shmat exists passed with the following output:
+Change Dir: /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-5T27oD
+
+Run Build Command(s):/disk0/app/clion/bin/ninja/linux/x64/ninja cmTC_1d89d && [1/2] Building C object CMakeFiles/cmTC_1d89d.dir/CheckFunctionExists.c.o
+[2/2] Linking C executable cmTC_1d89d
+
+
+
+Determining if the function IceConnectionNumber exists in the ICE passed with the following output:
+Change Dir: /disk0/clionProject/hakureiEngine/cmake-build-debug/CMakeFiles/CMakeScratch/TryCompile-IMt5Xj
+
+Run Build Command(s):/disk0/app/clion/bin/ninja/linux/x64/ninja cmTC_0011c && [1/2] Building C object CMakeFiles/cmTC_0011c.dir/CheckFunctionExists.c.o
+[2/2] Linking C executable cmTC_0011c
+
+
+

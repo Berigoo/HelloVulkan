@@ -4,7 +4,7 @@
 #pragma once
 #ifndef HAKUREIENGINE_HKDEVICE_H
 #define HAKUREIENGINE_HKDEVICE_H
-
+#define VK_USE_PLATFORM_XCB_KHR
 #include <vulkan/vulkan.h>
 #include <utility>
 #include <vector>
@@ -36,35 +36,37 @@ private:
     QueueFamilyIndices indices;
     SwapchainSupportDetails swapchainSupport;
 
-    std::vector<const char*> requiredLayers = {"VK_LAYER_KHRONOS_validation"};
-    std::vector<const char*> requiredExtensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+    std::vector<const char*> *requiredLayers = nullptr;
+    std::vector<const char*> *requiredInstanceExtensions = nullptr;
+    std::vector<const char*> *requiredDeviceExtensions = nullptr;
 
-#if NDEBUG
-    const bool enableValidationLayer = true;
-#else
+#ifdef NDEBUG
     const bool enableValidationLayer = false;
+#else
+    const bool enableValidationLayer = true;
 #endif
 
 public:
-    HkDevice();
+    HkDevice(std::vector<const char *> *requiredLayers, std::vector<const char *> *requiredExtensions);
     HkDevice(VkInstance instance);
+    HkDevice();
 
-    VkInstance getInstance(){
-        if(instance){
-            return instance;
-        }else{
-            spdlog::warn("instance null!");
-            return nullptr;
-        }
-    }
-    void setRequiredLayers(std::vector<const char*> reqLayers);
-    void setRequiredExtensions(std::vector<const char*> reqExtensions);
+
     /// picking suitable physical device based on params
     /// \param physicalDevice1
     /// \param flags
     /// \param surface
     /// \return true if successfully pick physical device
     bool pickPhysicalDevice(VkQueueFlagBits flags, VkSurfaceKHR surface);
+    void createInstance();
+
+    void setRequiredLayers(std::vector<const char*> *layers);
+    void setRequiredInstanceExtensions(std::vector<const char*> *exts);
+    void setRequiredDeviceExtensions(std::vector<const char*> *exts);
+
+    VkInstance getInstance();
+    VkPhysicalDevice* getPhysicalDevice();
+    std::vector<const char*>* getRequiredInstanceExtensions();
 private:
     bool checkLayerSupport();
     /// check for required extensions availability on physical device extensions list
