@@ -21,21 +21,55 @@ private:
     HkDevice* pDevice;
     HkSwapchain* pSwapchain;
 
+    VkPipelineLayout* pPipelineLayout;
+    VkPipeline* pGraphicPipeline;
+    VkRenderPass* pRenderPass;
+
+
 public:
+    std::vector<VkDynamicState> dynamicStates = {
+            VK_DYNAMIC_STATE_VIEWPORT,
+            VK_DYNAMIC_STATE_SCISSOR
+    };
+
+    //VkPipeline
     std::array<VkVertexInputAttributeDescription, 2> attributeDescription{};
     VkVertexInputBindingDescription bindingDescription{};
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     VkViewport viewport{};
     VkRect2D scissor{};
+    VkPipelineDynamicStateCreateInfo dynamicState{};
+    VkPipelineViewportStateCreateInfo viewportState{};
+    VkPipelineRasterizationStateCreateInfo rasterizer{};
+    VkPipelineMultisampleStateCreateInfo multisampling{};
+    VkPipelineColorBlendAttachmentState colorBlendAttachment{};
+    VkPipelineColorBlendStateCreateInfo colorBlending{};
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+
+    //VkRenderPass
+    VkAttachmentDescription colorAttachment{};
+    VkAttachmentReference colorAttachmentRef{};
+    VkSubpassDescription subpass{};
+    VkRenderPassCreateInfo renderPassInfo{};
+    VkSubpassDependency dependency{};
 
 
-    HkGraphicPipeline(HkDevice* device);
 
-    static std::vector<char> readFile(const char* path);
 
-private:
+
+
+    HkGraphicPipeline(HkDevice* device, HkSwapchain* swapchain);
+
+    void createPipelineLayout();
+    void createGraphicsPipeline(VkPipelineShaderStageCreateInfo shaderStages[], uint32_t count);
+    void createRenderPass();
+
+    static const std::vector<char> readFile(const char* path);
     VkShaderModule createShaderModule(const std::vector<char>* code);
+
+    VkPipelineLayout* getPipelineLayout();
+    VkRenderPass* getRenderPass();
 };
 
 

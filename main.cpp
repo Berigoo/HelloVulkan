@@ -28,4 +28,20 @@ int main() {
     HkSwapchain swapchain(&device, &surface);
     swapchain.createSwapchain();
     swapchain.createImageViews(nullptr);
+
+    HkGraphicPipeline graphicPipeline(&device, &swapchain);
+    graphicPipeline.createPipelineLayout();
+    graphicPipeline.createRenderPass();
+    VkPipelineShaderStageCreateInfo shaderStageCreateInfo[2] = {};
+    shaderStageCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageCreateInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
+    const std::vector<char> vertModule = HkGraphicPipeline::readFile("/disk0/clionProject/hakureiEngine/shaders/out/vert.spv");
+    shaderStageCreateInfo[0].module = graphicPipeline.createShaderModule(&vertModule);
+    shaderStageCreateInfo[0].pName = "main";
+    shaderStageCreateInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageCreateInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    const std::vector<char> fragModule = HkGraphicPipeline::readFile("/disk0/clionProject/hakureiEngine/shaders/out/frag.spv");
+    shaderStageCreateInfo[1].module = graphicPipeline.createShaderModule(&fragModule);
+    shaderStageCreateInfo[1].pName = "main";
+    graphicPipeline.createGraphicsPipeline(shaderStageCreateInfo, 2);
 }

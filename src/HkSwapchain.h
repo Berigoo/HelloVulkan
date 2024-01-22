@@ -28,6 +28,9 @@ public:
     void setFormat(VkFormat format1);
     void setColorSpace(VkColorSpaceKHR colorSpace1);
     void setPresentMode(VkPresentModeKHR presentMode1);
+
+    VkFormat getFormat();
+
     /// creating swapchain based on class variables
     void createSwapchain();
     void createImageViews(VkImageViewCreateInfo *imageViewInfo);

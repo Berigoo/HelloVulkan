@@ -157,3 +157,7 @@ void HkSwapchain::createImageViews(VkImageViewCreateInfo *imageViewInfo) {
     }
 }
 
+VkFormat HkSwapchain::getFormat() {
+    return format;
+}
+

@@ -12,3 +12,4 @@
 #include "HkSurface.h"
 #include "HkSwapchain.h"
 #include "HkUtility.h"
+#include "HkGraphicPipeline.h"
