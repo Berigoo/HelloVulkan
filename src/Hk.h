@@ -9,4 +9,6 @@
 
 #include "HkDevice.h"
 #include "XcbSurface.h"
+#include "HkSurface.h"
+#include "HkSwapchain.h"
 #include "HkUtility.h"

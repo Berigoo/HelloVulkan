@@ -11,6 +11,7 @@
 #include <spdlog/spdlog.h>
 #include <optional>
 #include <set>
+#include "XcbSurface.h"
 
 struct QueueFamilyIndices{
     std::optional<uint32_t> graphicFamily;
@@ -29,8 +30,9 @@ struct SwapchainSupportDetails{
 
 class HkDevice {
 private:
+    /// TODO make it pointer
     VkInstance instance;
-    VkPhysicalDevice physicalDevice;
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
 
     QueueFamilyIndices indices;
@@ -58,7 +60,11 @@ public:
     /// \param surface
     /// \return true if successfully pick physical device
     bool pickPhysicalDevice(VkQueueFlagBits flags, VkSurfaceKHR surface);
+    /// create vulkan instance, make sure to fill required layers and extensions first
     void createInstance();
+    /// create logical device
+    void createLogicalDevice();
+    void createSwapchain();
 
     void setRequiredLayers(std::vector<const char*> *layers);
     void setRequiredInstanceExtensions(std::vector<const char*> *exts);
@@ -67,6 +73,8 @@ public:
     VkInstance getInstance();
     VkPhysicalDevice* getPhysicalDevice();
     std::vector<const char*>* getRequiredInstanceExtensions();
+    QueueFamilyIndices* getQueueFamilyIndices();
+    VkDevice* getDevice();
 private:
     bool checkLayerSupport();
     /// check for required extensions availability on physical device extensions list
@@ -83,6 +91,8 @@ private:
     /// \param surface
     /// \return
     SwapchainSupportDetails findSwapchainSupport(VkPhysicalDevice physicalDevice1, VkSurfaceKHR surface);
+    /// choose extent if the default value is not suitable
+    /// \return
 };
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

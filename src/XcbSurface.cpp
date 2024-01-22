@@ -3,6 +3,7 @@
 //
 
 #include "XcbSurface.h"
+#include "HkDevice.h"
 
 XcbSurface::XcbSurface(uint16_t width, uint16_t height, uint32_t flagsMask, uint32_t flagsEventMask) {
     conn = xcb_connect(nullptr, nullptr);
@@ -64,4 +65,36 @@ VkSurfaceKHR *XcbSurface::getSurface() {
         spdlog::warn("surface null!");
         return nullptr;
     }
+}
+
+xcb_connection_t *XcbSurface::getConnection() {
+    return conn;
+}
+
+xcb_window_t *XcbSurface::getWindow() {
+    return &windowId;
+}
+
+VkExtent2D XcbSurface::getSurfaceExtent() {
+    VkExtent2D extent = {
+            0,
+            0
+    };
+    xcb_get_geometry_reply_t* reply;
+    auto cookie = xcb_get_geometry(conn, windowId);
+    if((reply = xcb_get_geometry_reply(conn, cookie, nullptr))){
+        extent = {
+                static_cast<uint32_t>(reply->width),
+                static_cast<uint32_t>(reply->height)
+        };
+        free(reply);
+
+        return extent;
+    }
+    spdlog::warn("cannot get geometry reply");
+    return extent;
+}
+
+XcbSurface::~XcbSurface() {
+
 }

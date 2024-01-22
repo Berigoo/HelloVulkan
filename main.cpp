@@ -14,15 +14,18 @@ int main() {
     device.setRequiredLayers(&requiredLayers1);
     device.setRequiredInstanceExtensions(&requiredExtensionsXcb);
     device.setRequiredDeviceExtensions(&requiredDeviceExtensions1);
-
     device.createInstance();
-    XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK), (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
 
+    XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK), (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
     surface.createSurface(&device);
 
     if(!device.pickPhysicalDevice(VK_QUEUE_GRAPHICS_BIT, *surface.getSurface())){
         spdlog::error("failed picking suitable physical device");
         return 0;
     }
+    device.createLogicalDevice();
 
+    HkSwapchain swapchain(&device, &surface);
+    swapchain.createSwapchain();
+    swapchain.createImageViews(nullptr);
 }

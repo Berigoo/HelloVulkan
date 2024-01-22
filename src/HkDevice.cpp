@@ -103,17 +103,17 @@ HkDevice::findQueueFamily(VkPhysicalDevice physicalDevice1, VkQueueFlagBits flag
     std::vector<VkQueueFamilyProperties> availableProps(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice1, &queueFamilyCount, availableProps.data());
 
-    uint32_t i = 0;
-    for(auto prop : availableProps){
+    int i = 0;
+    for(const auto &prop : availableProps){
+        VkBool32 presentSupported = false;
+        vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice1, i, surface, &presentSupported);
         if(prop.queueFlags & flags){
             holder.graphicFamily = i;
-            VkBool32 presentSupported = false;
-            vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice1, i, surface, &presentSupported);
-            if(presentSupported){
-                holder.presentFamily = i;
-                break;
-            }
         }
+        if(presentSupported){
+            holder.presentFamily = i;
+        }
+        if(holder.isCompelete()) break;
         i++;
     }
 
@@ -205,8 +205,12 @@ void HkDevice::createInstance() {
     instanceCreateInfo.pApplicationInfo = &appInfo;
     if(enableValidationLayer && checkLayerSupport()){
         spdlog::set_level(spdlog::level::trace);
-        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t >(requiredLayers->size());
-        instanceCreateInfo.ppEnabledLayerNames = requiredLayers->data();
+        if(requiredLayers) {
+            instanceCreateInfo.enabledLayerCount = static_cast<uint32_t >(requiredLayers->size());
+            instanceCreateInfo.ppEnabledLayerNames = requiredLayers->data();
+        }else{
+            spdlog::warn("required layers null");
+        }
 
         // debug object
         VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
@@ -217,8 +221,12 @@ void HkDevice::createInstance() {
 
         instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugInfo;
     }
-    instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t >(requiredInstanceExtensions->size());
-    instanceCreateInfo.ppEnabledExtensionNames = requiredInstanceExtensions->data();
+    if(requiredInstanceExtensions) {
+        instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t >(requiredInstanceExtensions->size());
+        instanceCreateInfo.ppEnabledExtensionNames = requiredInstanceExtensions->data();
+    }else{
+        spdlog::warn("required instance extensions null");
+    }
 
     if(vkCreateInstance(&instanceCreateInfo, nullptr, &instance) != VK_SUCCESS){
         throw std::runtime_error("failed to create vulkan instance");
@@ -227,6 +235,52 @@ void HkDevice::createInstance() {
 
 VkInstance HkDevice::getInstance() {
     return instance;
+}
+
+void HkDevice::createLogicalDevice() {
+    std::vector<VkDeviceQueueCreateInfo> queuesCreateInfo;
+    std::set<uint32_t> uniqueQueueFamily = {indices.graphicFamily.value(), indices.presentFamily.value()};
+    float queuePriority = 1.0f;
+    for(auto queueFamily : uniqueQueueFamily){
+      VkDeviceQueueCreateInfo queueCreateInfo{};
+      queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+      queueCreateInfo.queueCount = 1;
+      queueCreateInfo.queueFamilyIndex = queueFamily;
+      queueCreateInfo.pQueuePriorities = &queuePriority;
+      queuesCreateInfo.push_back(queueCreateInfo);
+    }
+
+    VkPhysicalDeviceFeatures physicalDeviceFeatures{};
+
+    VkDeviceCreateInfo info{};
+    info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    info.queueCreateInfoCount = static_cast<uint32_t>(queuesCreateInfo.size());
+    info.pQueueCreateInfos = queuesCreateInfo.data();
+    info.pEnabledFeatures = &physicalDeviceFeatures;
+    info.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtensions->size());
+    info.ppEnabledExtensionNames = requiredDeviceExtensions->data();
+    if(enableValidationLayer && checkLayerSupport()){
+        info.enabledLayerCount = static_cast<uint32_t>(requiredLayers->size());
+        info.ppEnabledLayerNames = requiredLayers->data();
+    }else{
+        info.enabledLayerCount = 0;
+    }
+
+    if(vkCreateDevice(physicalDevice, &info, nullptr, &device) != VK_SUCCESS){
+        throw std::runtime_error("failed to create logical device");
+    }
+}
+
+void HkDevice::createSwapchain() {
+
+}
+
+QueueFamilyIndices *HkDevice::getQueueFamilyIndices() {
+    return &indices;
+}
+
+VkDevice *HkDevice::getDevice() {
+    return &device;
 }
 
 VkBool32

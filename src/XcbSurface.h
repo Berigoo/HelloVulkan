@@ -11,11 +11,12 @@
 #include <stdexcept>
 #include <map>
 #include <spdlog/spdlog.h>
-#include "HkDevice.h"
+#include "HkSurface.h"
 
+class HkDevice;
 // TODO create loop
 //  dynamic loop (later)
-class XcbSurface {
+class XcbSurface : public HkSurface{
 private:
     xcb_connection_t* conn;
     xcb_screen_t* screen;
@@ -31,6 +32,7 @@ public:
     /// \param flagsMask or xcb_cw_t
     /// \param flagsEventMask or xcb_event_mask_t
     XcbSurface(uint16_t width, uint16_t height, uint32_t flagsMask, uint32_t flagsEventMask);
+    ~XcbSurface();
 
     /// update window property (by atom type), the atom will be stored on atoms variable
     /// \param property target property
@@ -41,7 +43,10 @@ public:
     /// \param instance vulkan instance
     void createSurface(HkDevice *hkDevice);
 
-    VkSurfaceKHR* getSurface();
+    VkSurfaceKHR* getSurface() override;
+    xcb_connection_t* getConnection();
+    xcb_window_t* getWindow();
+    VkExtent2D getSurfaceExtent() override;
 private:
     /// retrieve atom cookie
     /// \param str the name of atom (ex: WM_DELETE_WINDOW, WM_PROTOCOLS)
