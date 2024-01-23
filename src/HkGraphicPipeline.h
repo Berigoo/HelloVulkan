@@ -18,12 +18,12 @@ struct Vertex{
 
 class HkGraphicPipeline {
 private:
-    HkDevice* pDevice;
-    HkSwapchain* pSwapchain;
+    HkDevice* pDevice = nullptr;
+    HkSwapchain* pSwapchain = nullptr;
 
-    VkPipelineLayout* pPipelineLayout;
-    VkPipeline* pGraphicPipeline;
-    VkRenderPass* pRenderPass;
+    VkPipelineLayout* pPipelineLayout = nullptr;
+    VkPipeline* pGraphicPipeline = nullptr;
+    VkRenderPass* pRenderPass = nullptr;
 
 
 public:
@@ -56,10 +56,11 @@ public:
 
 
 
-
-
-
     HkGraphicPipeline(HkDevice* device, HkSwapchain* swapchain);
+
+    /// fill all required vulkan create info struct by default value,
+    /// make sure the pointer on constructor params have the required value
+    void fillDefaultCreateInfo();
 
     void createPipelineLayout();
     void createGraphicsPipeline(VkPipelineShaderStageCreateInfo shaderStages[], uint32_t count);

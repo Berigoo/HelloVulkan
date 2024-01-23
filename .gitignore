@@ -1,4 +1,5 @@
 cmake-build-debug
+shaders/out
 note.ctb
 .note.ctb*
 test

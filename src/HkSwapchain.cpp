@@ -3,6 +3,7 @@
 //
 
 #include "HkSwapchain.h"
+#include "HkGraphicPipeline.h"
 
 HkSwapchain::HkSwapchain(HkDevice *device, HkSurface *surface) {
     if(!device || !surface){
@@ -12,8 +13,6 @@ HkSwapchain::HkSwapchain(HkDevice *device, HkSurface *surface) {
 
     pDevice = device;
     pSurface = surface;
-
-    findSwapchainSupport();
 }
 
 void HkSwapchain::findSwapchainSupport() {
@@ -66,6 +65,8 @@ VkExtent2D HkSwapchain::getSwapExtent() {
 }
 
 void HkSwapchain::createSwapchain() {
+    findSwapchainSupport();
+
     VkSwapchainCreateInfoKHR info{};
     info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
     info.surface = *pSurface->getSurface();
@@ -160,4 +161,40 @@ void HkSwapchain::createImageViews(VkImageViewCreateInfo *imageViewInfo) {
 VkFormat HkSwapchain::getFormat() {
     return format;
 }
+
+std::vector<VkImageView> *HkSwapchain::getSwapchainImageViews() {
+    if(swapchainImageViews.size() < 1){
+        spdlog::error("swapchain image view size lower than 1");
+    }
+    return &swapchainImageViews;
+}
+
+void HkSwapchain::createFramebuffers(HkGraphicPipeline *pGraphicPipeline) {
+    swapchainFramebuffers.resize(swapchainImageViews.size());
+
+    for(int i=0; i<swapchainImageViews.size(); i++) {
+        VkImageView attachments[] = {
+                swapchainImageViews[i]
+        };
+
+        VkFramebufferCreateInfo createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        if(pGraphicPipeline->getRenderPass()) {
+            createInfo.renderPass = *pGraphicPipeline->getRenderPass();
+        }else{
+            throw std::runtime_error("failed to create framebuffers, render pass null");
+        }
+        createInfo.attachmentCount = 1;
+        createInfo.pAttachments = attachments;
+        VkExtent2D extent2D = getSwapExtent();
+        createInfo.width = extent2D.width;
+        createInfo.height = extent2D.height;
+        createInfo.layers = 1;
+
+        if (vkCreateFramebuffer(*pDevice->getDevice(), &createInfo, nullptr, &swapchainFramebuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create framebuffers");
+        }
+    }
+}
+
 

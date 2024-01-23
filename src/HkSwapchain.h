@@ -6,11 +6,13 @@
 #define HAKUREIENGINE_HKSWAPCHAIN_H
 #include "HkDevice.h"
 #include "HkSurface.h"
+class HkGraphicPipeline;
 
 class HkSwapchain {
 private:
-    HkDevice* pDevice;
-    HkSurface* pSurface;
+    HkDevice* pDevice = nullptr;
+    HkSurface* pSurface = nullptr;
+
     SwapchainSupportDetails swapchainSupportInfo;
     VkSwapchainKHR swapchain;
 
@@ -20,7 +22,10 @@ private:
 
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
+    std::vector<VkFramebuffer> swapchainFramebuffers;
 
+protected:
+    void setGraphicPipeline();
 
 public:
     HkSwapchain(HkDevice* device, HkSurface* surface);
@@ -29,18 +34,21 @@ public:
     void setColorSpace(VkColorSpaceKHR colorSpace1);
     void setPresentMode(VkPresentModeKHR presentMode1);
 
+    std::vector<VkImageView>* getSwapchainImageViews();
+
     VkFormat getFormat();
 
     /// creating swapchain based on class variables
     void createSwapchain();
     void createImageViews(VkImageViewCreateInfo *imageViewInfo);
+    void createFramebuffers(HkGraphicPipeline* pGraphicPipeline);
     /// if the current extent shows valid value then return it, otherwise creating extent
-    /// from surface geometry info
+    /// from surface geometry commandPoolInfo
     /// \return
     VkExtent2D getSwapExtent();
 private:
     /// fill swapChainSupportInfo variable,
-    /// to find supported info by swapchain before creating it
+    /// to find supported commandPoolInfo by swapchain before creating it
     void findSwapchainSupport();
     /// choosing the surface format based on params from the available supported formats
     /// \return

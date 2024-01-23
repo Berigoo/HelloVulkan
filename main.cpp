@@ -9,14 +9,18 @@ std::vector<const char*> requiredLayers1 = {"VK_LAYER_KHRONOS_validation"};
 std::vector<const char*> requiredExtensionsXcb = {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XCB_SURFACE_EXTENSION_NAME, VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
 std::vector<const char*> requiredDeviceExtensions1 = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+HkDevice device;
+XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK), (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
+HkSwapchain swapchain(&device, &surface);
+HkGraphicPipeline graphicPipeline(&device, &swapchain);
+HkCommandPool commandPool(&device);
+
 int main() {
-    HkDevice device;
     device.setRequiredLayers(&requiredLayers1);
     device.setRequiredInstanceExtensions(&requiredExtensionsXcb);
     device.setRequiredDeviceExtensions(&requiredDeviceExtensions1);
     device.createInstance();
 
-    XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK), (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
     surface.createSurface(&device);
 
     if(!device.pickPhysicalDevice(VK_QUEUE_GRAPHICS_BIT, *surface.getSurface())){
@@ -25,11 +29,11 @@ int main() {
     }
     device.createLogicalDevice();
 
-    HkSwapchain swapchain(&device, &surface);
     swapchain.createSwapchain();
+    // TODO make the class have struct create info (the struct not passed on parameter)
     swapchain.createImageViews(nullptr);
 
-    HkGraphicPipeline graphicPipeline(&device, &swapchain);
+    graphicPipeline.fillDefaultCreateInfo();
     graphicPipeline.createPipelineLayout();
     graphicPipeline.createRenderPass();
     VkPipelineShaderStageCreateInfo shaderStageCreateInfo[2] = {};
@@ -44,4 +48,9 @@ int main() {
     shaderStageCreateInfo[1].module = graphicPipeline.createShaderModule(&fragModule);
     shaderStageCreateInfo[1].pName = "main";
     graphicPipeline.createGraphicsPipeline(shaderStageCreateInfo, 2);
+
+    swapchain.createFramebuffers(&graphicPipeline);
+
+    commandPool.fillDefaultCreateInfo();
+    commandPool.createCommandPool();
 }

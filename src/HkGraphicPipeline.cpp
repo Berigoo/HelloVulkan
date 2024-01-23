@@ -37,7 +37,66 @@ VkShaderModule HkGraphicPipeline::createShaderModule(const std::vector<char> *co
 HkGraphicPipeline::HkGraphicPipeline(HkDevice *device, HkSwapchain* swapchain) {
     pDevice = device;
     pSwapchain = swapchain;
-    //vert
+}
+
+void HkGraphicPipeline::createPipelineLayout() {
+    if(pPipelineLayout) free(pPipelineLayout);
+    pPipelineLayout = new VkPipelineLayout{};
+    if(vkCreatePipelineLayout(*pDevice->getDevice(), &pipelineLayoutInfo, nullptr, pPipelineLayout) != VK_SUCCESS){
+        throw std::runtime_error("failed to create pipeline layout");
+    }
+}
+
+void HkGraphicPipeline::createRenderPass() {
+    if(pRenderPass) free(pRenderPass);
+    pRenderPass = new VkRenderPass{};
+    if(vkCreateRenderPass(*pDevice->getDevice(), &renderPassInfo, nullptr, pRenderPass) != VK_SUCCESS){
+        throw std::runtime_error("failed to create render pass");
+    }
+}
+
+void HkGraphicPipeline::createGraphicsPipeline(VkPipelineShaderStageCreateInfo shaderStages[], uint32_t count) {
+    if(pGraphicPipeline) free(pGraphicPipeline);
+    VkGraphicsPipelineCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    createInfo.stageCount = count;
+    createInfo.pStages = shaderStages;
+    createInfo.pInputAssemblyState = &inputAssembly;
+    createInfo.pVertexInputState = &vertexInputInfo;
+    createInfo.pViewportState = &viewportState;
+    createInfo.pRasterizationState = &rasterizer;
+    createInfo.pMultisampleState = &multisampling;
+    createInfo.pDepthStencilState = nullptr;
+    createInfo.pColorBlendState = &colorBlending;
+    createInfo.pDynamicState = &dynamicState;
+    createInfo.layout = *getPipelineLayout();
+    createInfo.renderPass = *pRenderPass;
+    createInfo.subpass = 0;
+    createInfo.basePipelineHandle = VK_NULL_HANDLE;
+    createInfo.basePipelineIndex = -1;
+
+    pGraphicPipeline = new VkPipeline{};
+    if(vkCreateGraphicsPipelines(*pDevice->getDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, pGraphicPipeline) != VK_SUCCESS){
+        throw std::runtime_error("failed to create graphic pipeline");
+    }
+}
+
+VkPipelineLayout *HkGraphicPipeline::getPipelineLayout() {
+    if(!pPipelineLayout){
+        spdlog::error("pipeline layout null");
+    }
+    return pPipelineLayout;
+}
+
+VkRenderPass *HkGraphicPipeline::getRenderPass() {
+    if(!pRenderPass){
+        spdlog::error("render pass null");
+    }
+    return pRenderPass;
+}
+
+void HkGraphicPipeline::fillDefaultCreateInfo() {
+//vert
     attributeDescription[0].binding = 0;
     attributeDescription[0].location = 0;
     attributeDescription[0].format = VK_FORMAT_R32G32_SFLOAT;
@@ -127,7 +186,6 @@ HkGraphicPipeline::HkGraphicPipeline(HkDevice *device, HkSwapchain* swapchain) {
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
-
     colorAttachment.format = pSwapchain->getFormat();
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
     colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -158,61 +216,5 @@ HkGraphicPipeline::HkGraphicPipeline(HkDevice *device, HkSwapchain* swapchain) {
 
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
-}
-
-void HkGraphicPipeline::createPipelineLayout() {
-    if(pPipelineLayout) free(pPipelineLayout);
-    pPipelineLayout = new VkPipelineLayout{};
-    if(vkCreatePipelineLayout(*pDevice->getDevice(), &pipelineLayoutInfo, nullptr, pPipelineLayout) != VK_SUCCESS){
-        throw std::runtime_error("failed to create pipeline layout");
-    }
-}
-
-void HkGraphicPipeline::createRenderPass() {
-    if(pRenderPass) free(pRenderPass);
-    pRenderPass = new VkRenderPass{};
-    if(vkCreateRenderPass(*pDevice->getDevice(), &renderPassInfo, nullptr, pRenderPass) != VK_SUCCESS){
-        throw std::runtime_error("failed to create render pass");
-    }
-}
-
-void HkGraphicPipeline::createGraphicsPipeline(VkPipelineShaderStageCreateInfo shaderStages[], uint32_t count) {
-    if(pGraphicPipeline) free(pGraphicPipeline);
-    VkGraphicsPipelineCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    createInfo.stageCount = count;
-    createInfo.pStages = shaderStages;
-    createInfo.pInputAssemblyState = &inputAssembly;
-    createInfo.pVertexInputState = &vertexInputInfo;
-    createInfo.pViewportState = &viewportState;
-    createInfo.pRasterizationState = &rasterizer;
-    createInfo.pMultisampleState = &multisampling;
-    createInfo.pDepthStencilState = nullptr;
-    createInfo.pColorBlendState = &colorBlending;
-    createInfo.pDynamicState = &dynamicState;
-    createInfo.layout = *getPipelineLayout();
-    createInfo.renderPass = *pRenderPass;
-    createInfo.subpass = 0;
-    createInfo.basePipelineHandle = VK_NULL_HANDLE;
-    createInfo.basePipelineIndex = -1;
-
-    pGraphicPipeline = new VkPipeline{};
-    if(vkCreateGraphicsPipelines(*pDevice->getDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, pGraphicPipeline) != VK_SUCCESS){
-        throw std::runtime_error("failed to create graphic pipeline");
-    }
-}
-
-VkPipelineLayout *HkGraphicPipeline::getPipelineLayout() {
-    if(!pPipelineLayout){
-        spdlog::error("pipeline layout null");
-    }
-    return pPipelineLayout;
-}
-
-VkRenderPass *HkGraphicPipeline::getRenderPass() {
-    if(!pRenderPass){
-        spdlog::error("render pass null");
-    }
-    return pRenderPass;
 }
 

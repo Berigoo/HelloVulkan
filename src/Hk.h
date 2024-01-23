@@ -13,3 +13,4 @@
 #include "HkSwapchain.h"
 #include "HkUtility.h"
 #include "HkGraphicPipeline.h"
+#include "HkCommandPool.h"

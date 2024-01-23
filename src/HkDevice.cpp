@@ -44,14 +44,14 @@ HkDevice::HkDevice(std::vector<const char *> *requiredLayers, std::vector<const 
 bool HkDevice::checkLayerSupport() {
     uint32_t propCount = 0;
     vkEnumerateInstanceLayerProperties(&propCount, nullptr);
-    if(propCount == 0) return false;
+    if (propCount == 0) return false;
     std::vector<VkLayerProperties> propLayers;
     vkEnumerateInstanceLayerProperties(&propCount, propLayers.data());
 
-    for(auto reqLayer : *requiredLayers){
-        for(uint32_t i=0; i<propLayers.size(); i++){
-            if(reqLayer == propLayers[i].layerName) break;
-            else if(i == propLayers.size()-1){
+    for (auto reqLayer: *requiredLayers) {
+        for (uint32_t i = 0; i < propLayers.size(); i++) {
+            if (reqLayer == propLayers[i].layerName) break;
+            else if (i == propLayers.size() - 1) {
                 spdlog::error("Required layer not available!");
                 return false;
             }
@@ -67,22 +67,22 @@ HkDevice::HkDevice(VkInstance instance) {
 bool HkDevice::pickPhysicalDevice(VkQueueFlagBits flags, VkSurfaceKHR surface) {
     uint32_t physicalDeviceCount = 0;
     vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, nullptr);
-    if(physicalDeviceCount == 0) throw std::runtime_error("Physical device not found");
+    if (physicalDeviceCount == 0) throw std::runtime_error("Physical device not found");
     std::vector<VkPhysicalDevice> physicalDevices(physicalDeviceCount);
     vkEnumeratePhysicalDevices(instance, &physicalDeviceCount, physicalDevices.data());
 
-    for(auto phyDev : physicalDevices){
+    for (auto phyDev: physicalDevices) {
         indices = findQueueFamily(phyDev, flags, surface);
         bool isExtsSupported = checkExtensionsSupport(phyDev);
         bool isSwapchainSupported = false;
 
         // if the VK_KHR_SWAPCHAIN_EXTENSION_NAME supported then swapchain supported for this surface
-        if(isExtsSupported){
+        if (isExtsSupported) {
             swapchainSupport = findSwapchainSupport(phyDev, surface);
             isSwapchainSupported = !swapchainSupport.formats.empty() && !swapchainSupport.presentModes.empty();
         }
 
-        if(indices.isCompelete() && isExtsSupported && isSwapchainSupported){
+        if (indices.isCompelete() && isExtsSupported && isSwapchainSupported) {
             physicalDevice = phyDev;
             VkPhysicalDeviceProperties props;
             vkGetPhysicalDeviceProperties(phyDev, &props);
@@ -99,21 +99,21 @@ HkDevice::findQueueFamily(VkPhysicalDevice physicalDevice1, VkQueueFlagBits flag
 
     uint32_t queueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice1, &queueFamilyCount, nullptr);
-    if(queueFamilyCount == 0) throw std::runtime_error("Queue family count 0");
+    if (queueFamilyCount == 0) throw std::runtime_error("Queue family count 0");
     std::vector<VkQueueFamilyProperties> availableProps(queueFamilyCount);
     vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice1, &queueFamilyCount, availableProps.data());
 
     int i = 0;
-    for(const auto &prop : availableProps){
+    for (const auto &prop: availableProps) {
         VkBool32 presentSupported = false;
         vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice1, i, surface, &presentSupported);
-        if(prop.queueFlags & flags){
+        if (prop.queueFlags & flags) {
             holder.graphicFamily = i;
         }
-        if(presentSupported){
+        if (presentSupported) {
             holder.presentFamily = i;
         }
-        if(holder.isCompelete()) break;
+        if (holder.isCompelete()) break;
         i++;
     }
 
@@ -123,14 +123,14 @@ HkDevice::findQueueFamily(VkPhysicalDevice physicalDevice1, VkQueueFlagBits flag
 bool HkDevice::checkExtensionsSupport(VkPhysicalDevice physicalDevice1) {
     uint32_t extensionCount = 0;
     vkEnumerateDeviceExtensionProperties(physicalDevice1, nullptr, &extensionCount, nullptr);
-    if(extensionCount == 0) throw std::runtime_error("Extension count 0");
+    if (extensionCount == 0) throw std::runtime_error("Extension count 0");
     std::vector<VkExtensionProperties> availableExtensions(extensionCount);
     vkEnumerateDeviceExtensionProperties(physicalDevice1, nullptr, &extensionCount, availableExtensions.data());
 
     std::set<std::string> requiredExtensions1(requiredDeviceExtensions->begin(), requiredDeviceExtensions->end());
 
     spdlog::trace("physical device exts support");
-    for(auto ext : availableExtensions){
+    for (auto ext: availableExtensions) {
         spdlog::trace("\t{}", ext.extensionName);
         requiredExtensions1.erase(ext.extensionName);
     }
@@ -145,13 +145,13 @@ SwapchainSupportDetails HkDevice::findSwapchainSupport(VkPhysicalDevice physical
 
     uint32_t formatCount = 0;
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice1, surface, &formatCount, nullptr);
-    if(formatCount == 0) throw std::runtime_error("surface format 0 supported");
+    if (formatCount == 0) throw std::runtime_error("surface format 0 supported");
     holder.formats.resize(formatCount);
     vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice1, surface, &formatCount, holder.formats.data());
 
     uint32_t presentModeCount = 0;
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice1, surface, &presentModeCount, nullptr);
-    if(presentModeCount == 0) throw std::runtime_error("present mode 0 supported");
+    if (presentModeCount == 0) throw std::runtime_error("present mode 0 supported");
     holder.presentModes.resize(presentModeCount);
     vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice1, surface, &presentModeCount, holder.presentModes.data());
 
@@ -159,8 +159,8 @@ SwapchainSupportDetails HkDevice::findSwapchainSupport(VkPhysicalDevice physical
 }
 
 VkPhysicalDevice *HkDevice::getPhysicalDevice() {
-    if(physicalDevice) return &physicalDevice;
-    else{
+    if (physicalDevice) return &physicalDevice;
+    else {
         spdlog::warn("physical device null");
         return nullptr;
     }
@@ -171,21 +171,21 @@ HkDevice::HkDevice() {
 }
 
 void HkDevice::setRequiredLayers(std::vector<const char *> *layers) {
-    if(!layers) spdlog::warn("layers null");
+    if (!layers) spdlog::warn("layers null");
     this->requiredLayers = layers;
 }
 
 void HkDevice::setRequiredDeviceExtensions(std::vector<const char *> *exts) {
-    if(!exts) spdlog::warn("device extensions null");
+    if (!exts) spdlog::warn("device extensions null");
     this->requiredDeviceExtensions = exts;
 }
 
 void HkDevice::setRequiredInstanceExtensions(std::vector<const char *> *exts) {
-    if(!exts) spdlog::warn("instance extensions null");
+    if (!exts) spdlog::warn("instance extensions null");
     requiredInstanceExtensions = exts;
 }
 
-std::vector<const char *>* HkDevice::getRequiredInstanceExtensions() {
+std::vector<const char *> *HkDevice::getRequiredInstanceExtensions() {
     return requiredInstanceExtensions;
 }
 
@@ -203,32 +203,36 @@ void HkDevice::createInstance() {
     instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     instanceCreateInfo.enabledLayerCount = 0;
     instanceCreateInfo.pApplicationInfo = &appInfo;
-    if(enableValidationLayer && checkLayerSupport()){
+    if (enableValidationLayer && checkLayerSupport()) {
         spdlog::set_level(spdlog::level::trace);
-        if(requiredLayers) {
+        if (requiredLayers) {
             instanceCreateInfo.enabledLayerCount = static_cast<uint32_t >(requiredLayers->size());
             instanceCreateInfo.ppEnabledLayerNames = requiredLayers->data();
-        }else{
+        } else {
             spdlog::warn("required layers null");
         }
 
         // debug object
         VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
         debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-        debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+        debugInfo.messageSeverity =
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+        debugInfo.messageType =
+                VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         debugInfo.pfnUserCallback = debugCallback;
 
-        instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugInfo;
+        instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT *) &debugInfo;
     }
-    if(requiredInstanceExtensions) {
+    if (requiredInstanceExtensions) {
         instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t >(requiredInstanceExtensions->size());
         instanceCreateInfo.ppEnabledExtensionNames = requiredInstanceExtensions->data();
-    }else{
+    } else {
         spdlog::warn("required instance extensions null");
     }
 
-    if(vkCreateInstance(&instanceCreateInfo, nullptr, &instance) != VK_SUCCESS){
+    if (vkCreateInstance(&instanceCreateInfo, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error("failed to create vulkan instance");
     }
 }
@@ -241,13 +245,13 @@ void HkDevice::createLogicalDevice() {
     std::vector<VkDeviceQueueCreateInfo> queuesCreateInfo;
     std::set<uint32_t> uniqueQueueFamily = {indices.graphicFamily.value(), indices.presentFamily.value()};
     float queuePriority = 1.0f;
-    for(auto queueFamily : uniqueQueueFamily){
-      VkDeviceQueueCreateInfo queueCreateInfo{};
-      queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-      queueCreateInfo.queueCount = 1;
-      queueCreateInfo.queueFamilyIndex = queueFamily;
-      queueCreateInfo.pQueuePriorities = &queuePriority;
-      queuesCreateInfo.push_back(queueCreateInfo);
+    for (auto queueFamily: uniqueQueueFamily) {
+        VkDeviceQueueCreateInfo queueCreateInfo{};
+        queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queueCreateInfo.queueCount = 1;
+        queueCreateInfo.queueFamilyIndex = queueFamily;
+        queueCreateInfo.pQueuePriorities = &queuePriority;
+        queuesCreateInfo.push_back(queueCreateInfo);
     }
 
     VkPhysicalDeviceFeatures physicalDeviceFeatures{};
@@ -259,14 +263,14 @@ void HkDevice::createLogicalDevice() {
     info.pEnabledFeatures = &physicalDeviceFeatures;
     info.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtensions->size());
     info.ppEnabledExtensionNames = requiredDeviceExtensions->data();
-    if(enableValidationLayer && checkLayerSupport()){
+    if (enableValidationLayer && checkLayerSupport()) {
         info.enabledLayerCount = static_cast<uint32_t>(requiredLayers->size());
         info.ppEnabledLayerNames = requiredLayers->data();
-    }else{
+    } else {
         info.enabledLayerCount = 0;
     }
 
-    if(vkCreateDevice(physicalDevice, &info, nullptr, &device) != VK_SUCCESS){
+    if (vkCreateDevice(physicalDevice, &info, nullptr, &device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device");
     }
 }
@@ -286,6 +290,6 @@ VkDevice *HkDevice::getDevice() {
 VkBool32
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
               const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData, void *pUserData) {
-   spdlog::debug("msg : {}", pCallbackData->pMessage);
-   return VK_FALSE;
+    spdlog::debug("msg : {}", pCallbackData->pMessage);
+    return VK_FALSE;
 }
