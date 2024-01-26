@@ -196,8 +196,6 @@ void HkSwapchain::createFramebuffers(HkGraphicPipeline *pGraphicPipeline) {
             throw std::runtime_error("failed to create framebuffers");
         }
     }
-
-    pSyncObject->initSyncObjs(swapchainImages.size(), *pDevice->getDevice());
 }
 
 std::vector<VkImage> *HkSwapchain::getSwapchainImages() {
@@ -217,16 +215,15 @@ VkSwapchainKHR *HkSwapchain::getSwapchain() {
 }
 
 void HkSwapchain::cleanup() {
-    vkDestroySwapchainKHR(*pDevice->getDevice(), swapchain, nullptr);
-
     for(int i=0; i<swapchainImages.size(); i++) {
         vkDestroyImageView(*pDevice->getDevice(), swapchainImageViews[i], nullptr);
-        vkDestroyImage(*pDevice->getDevice(), swapchainImages[i], nullptr);
         vkDestroyFramebuffer(*pDevice->getDevice(), swapchainFramebuffers[i], nullptr);
     }
+    vkDestroySwapchainKHR(*pDevice->getDevice(), swapchain, nullptr);
 }
 
 void HkSwapchain::recreateSwapchain(HkGraphicPipeline *pGraphicPipeline) {
+    vkDeviceWaitIdle(*pDevice->getDevice());
     cleanup();
 
     createSwapchain();

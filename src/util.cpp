@@ -5,7 +5,7 @@
 
 namespace util{
     void recordFrameBuffer(HkCommandPool *pCommandPool, uint32_t commandBufferIndex, VkBuffer *vertexBuffer,
-                           VkBuffer *indexBuffer, uint32_t indexSize) {
+                           VkBuffer *indexBuffer, uint32_t indexSize, uint32_t &imageIndex) {
         VkResult res;
         VkCommandBuffer commandBuffer = (*pCommandPool->getCommandBuffers())[commandBufferIndex];
 
@@ -19,16 +19,28 @@ namespace util{
         VkRenderPassBeginInfo renderPassBeginInfo{};
         renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         renderPassBeginInfo.renderPass = *pCommandPool->getGraphicPipeline()->getRenderPass();
-        renderPassBeginInfo.framebuffer = (*pCommandPool->getSwapchain()->getSwapchainFramebuffers())[commandBufferIndex];
+        renderPassBeginInfo.framebuffer = (*pCommandPool->getSwapchain()->getSwapchainFramebuffers())[imageIndex];
         renderPassBeginInfo.clearValueCount = 1;
         renderPassBeginInfo.pClearValues = &pCommandPool->getGraphicPipeline()->clearColorValue;
-        renderPassBeginInfo.renderArea = pCommandPool->getGraphicPipeline()->renderArea;
+        VkRect2D renderArea{};
+        renderArea.extent = pCommandPool->getSwapchain()->getSwapExtent();
+        renderArea.offset = {0, 0};
+        renderPassBeginInfo.renderArea = renderArea;
 
         vkCmdBeginRenderPass(commandBuffer, &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
 
         vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, *pCommandPool->getGraphicPipeline()->getPipeline());
 
-        vkCmdSetViewport(commandBuffer, 0, 1, &pCommandPool->getGraphicPipeline()->viewport);
+        // TODO make the viewport variable inside the swapchain class
+        VkViewport viewport{};
+        viewport.x = 0;
+        viewport.y = 0;
+        VkExtent2D extent2D = pCommandPool->getSwapchain()->getSwapExtent();
+        viewport.width = (float)extent2D.width;
+        viewport.height = (float)extent2D.height;
+        viewport.minDepth = 0.0f;
+        viewport.maxDepth = 1.0f;
+        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &pCommandPool->getGraphicPipeline()->scissor);
 
         VkDeviceSize offset[] = {0};

@@ -87,6 +87,7 @@ VkExtent2D XcbSurface::getSurfaceExtent() {
                 static_cast<uint32_t>(reply->width),
                 static_cast<uint32_t>(reply->height)
         };
+        spdlog::debug("resized to {} {}", reply->width, reply->height);
         free(reply);
 
         return extent;

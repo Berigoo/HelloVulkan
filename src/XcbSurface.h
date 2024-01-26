@@ -14,8 +14,6 @@
 #include "HkSurface.h"
 
 class HkDevice;
-// TODO create loop
-//  dynamic loop (later)
 class XcbSurface : public HkSurface{
 private:
     xcb_connection_t* conn;

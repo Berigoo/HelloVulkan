@@ -11,7 +11,6 @@
 #include "XcbSurface.h"
 #include "HkSurface.h"
 #include "HkSwapchain.h"
-#include "HkUtility.h"
 #include "HkGraphicPipeline.h"
 #include "HkCommandPool.h"
 #include "util.h"
