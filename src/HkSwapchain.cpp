@@ -5,7 +5,7 @@
 #include "HkSwapchain.h"
 #include "HkGraphicPipeline.h"
 
-HkSwapchain::HkSwapchain(HkDevice *device, HkSurface *surface) {
+HkSwapchain::HkSwapchain(HkDevice *device, HkSurface *surface, HkSyncObject *syncObject) {
     if(!device || !surface){
         spdlog::error("device or surface null");
         return;
@@ -13,6 +13,7 @@ HkSwapchain::HkSwapchain(HkDevice *device, HkSurface *surface) {
 
     pDevice = device;
     pSurface = surface;
+    pSyncObject = syncObject;
 }
 
 void HkSwapchain::findSwapchainSupport() {
@@ -195,6 +196,8 @@ void HkSwapchain::createFramebuffers(HkGraphicPipeline *pGraphicPipeline) {
             throw std::runtime_error("failed to create framebuffers");
         }
     }
+
+    pSyncObject->initSyncObjs(swapchainImages.size(), *pDevice->getDevice());
 }
 
 std::vector<VkImage> *HkSwapchain::getSwapchainImages() {
@@ -203,6 +206,32 @@ std::vector<VkImage> *HkSwapchain::getSwapchainImages() {
 
 std::vector<VkFramebuffer> *HkSwapchain::getSwapchainFramebuffers() {
     return &swapchainFramebuffers;
+}
+
+HkSyncObject *HkSwapchain::getSyncObject() {
+    return pSyncObject;
+}
+
+VkSwapchainKHR *HkSwapchain::getSwapchain() {
+    return &swapchain;
+}
+
+void HkSwapchain::cleanup() {
+    vkDestroySwapchainKHR(*pDevice->getDevice(), swapchain, nullptr);
+
+    for(int i=0; i<swapchainImages.size(); i++) {
+        vkDestroyImageView(*pDevice->getDevice(), swapchainImageViews[i], nullptr);
+        vkDestroyImage(*pDevice->getDevice(), swapchainImages[i], nullptr);
+        vkDestroyFramebuffer(*pDevice->getDevice(), swapchainFramebuffers[i], nullptr);
+    }
+}
+
+void HkSwapchain::recreateSwapchain(HkGraphicPipeline *pGraphicPipeline) {
+    cleanup();
+
+    createSwapchain();
+    createImageViews(nullptr);
+    createFramebuffers(pGraphicPipeline);
 }
 
 

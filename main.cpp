@@ -10,7 +10,8 @@ std::vector<const char*> requiredDeviceExtensions1 = {VK_KHR_SWAPCHAIN_EXTENSION
 
 HkDevice device;
 XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK), (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
-HkSwapchain swapchain(&device, &surface);
+HkSyncObject syncObject;
+HkSwapchain swapchain(&device, &surface, &syncObject);
 HkGraphicPipeline graphicPipeline(&device, &swapchain);
 HkCommandPool commandPool(&device, &swapchain, &graphicPipeline);
 
@@ -82,8 +83,50 @@ int main() {
                                *device.getGraphicQueue(), indicesBuffer, indicesBufferMemory, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
 
-    surface.setLoop([](){
-        spdlog::debug("test");
+    uint32_t currentFrame = 0;
+    surface.setLoop([&](){
+        vkWaitForFences(*device.getDevice(), 1, &swapchain.getSyncObject()->gpuDoneFence[currentFrame], VK_TRUE, UINT64_MAX);
+        vkResetFences(*device.getDevice(), 1, &swapchain.getSyncObject()->gpuDoneFence[currentFrame]);
+
+        uint32_t imageIndex;
+        VkResult res = vkAcquireNextImageKHR(*device.getDevice(), *swapchain.getSwapchain(), UINT64_MAX, swapchain.getSyncObject()->imageAvailableSemaphore[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if(res != VK_SUCCESS){
+            throw std::runtime_error("failed to acquire next image index");
+        }else if(res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR || surface.windowResizedPoll){
+            surface.windowResizedPoll = false;
+            swapchain.recreateSwapchain(&graphicPipeline);
+        }
+
+        vkResetCommandBuffer(commandPool.getCommandBuffers()->data()[currentFrame], 0);
+        // TODO make this func inside commandPool class
+        util::recordFrameBuffer(&commandPool, currentFrame, &vertexBuffer, &indicesBuffer, indices.data.size());
+
+        VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        VkSubmitInfo submitInfo{};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandPool.getCommandBuffers()->data()[currentFrame];
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = &swapchain.getSyncObject()->imageAvailableSemaphore[currentFrame];
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &swapchain.getSyncObject()->renderFinishedSemaphore[currentFrame];
+        submitInfo.pWaitDstStageMask = &flag;
+
+        res = vkQueueSubmit(*device.getGraphicQueue(), 1, &submitInfo, swapchain.getSyncObject()->gpuDoneFence[currentFrame]);
+        if(res != VK_SUCCESS) throw std::runtime_error("failed to submit to graphic queue");
+
+        VkPresentInfoKHR presentInfoKhr{};
+        presentInfoKhr.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        presentInfoKhr.waitSemaphoreCount = 1;
+        presentInfoKhr.pWaitSemaphores = &swapchain.getSyncObject()->renderFinishedSemaphore[currentFrame];
+        presentInfoKhr.swapchainCount = 1;
+        presentInfoKhr.pSwapchains = swapchain.getSwapchain();
+        presentInfoKhr.pImageIndices = &imageIndex;
+
+        res = vkQueuePresentKHR(*device.getPresentQueue(), &presentInfoKhr);
+        if(res != VK_SUCCESS) throw std::runtime_error("failed to submit to present queue");
+
+        currentFrame = (currentFrame + 1) % swapchain.getSwapchainImages()->size();
     });
     surface.run();
 }

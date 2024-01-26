@@ -6,12 +6,14 @@
 #define HAKUREIENGINE_HKSWAPCHAIN_H
 #include "HkDevice.h"
 #include "HkSurface.h"
+#include "HkSyncObject.h"
 class HkGraphicPipeline;
 
 class HkSwapchain {
 private:
     HkDevice* pDevice = nullptr;
     HkSurface* pSurface = nullptr;
+    HkSyncObject* pSyncObject = nullptr;
 
     SwapchainSupportDetails swapchainSupportInfo;
     VkSwapchainKHR swapchain;
@@ -27,7 +29,7 @@ private:
 protected:
 
 public:
-    HkSwapchain(HkDevice* device, HkSurface* surface);
+    HkSwapchain(HkDevice *device, HkSurface *surface, HkSyncObject *syncObject);
 
     void setFormat(VkFormat format1);
     void setColorSpace(VkColorSpaceKHR colorSpace1);
@@ -36,6 +38,8 @@ public:
     std::vector<VkImageView>* getSwapchainImageViews();
     std::vector<VkImage>* getSwapchainImages();
     std::vector<VkFramebuffer>* getSwapchainFramebuffers();
+    HkSyncObject* getSyncObject();
+    VkSwapchainKHR* getSwapchain();
 
     VkFormat getFormat();
 
@@ -47,6 +51,7 @@ public:
     /// from surface geometry commandPoolInfo
     /// \return
     VkExtent2D getSwapExtent();
+    void recreateSwapchain(HkGraphicPipeline *pGraphicPipeline);
 private:
     /// fill swapChainSupportInfo variable,
     /// to find supported commandPoolInfo by swapchain before creating it
@@ -58,6 +63,8 @@ private:
     /// \param mode
     /// \return default VK_PRESENT_MODE_FIFO_KHR
     VkPresentModeKHR chooseSwapSurfacePresentMode();
+
+    void cleanup();
 };
 
 

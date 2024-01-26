@@ -31,7 +31,7 @@ namespace util{
         vkCmdSetViewport(commandBuffer, 0, 1, &pCommandPool->getGraphicPipeline()->viewport);
         vkCmdSetScissor(commandBuffer, 0, 1, &pCommandPool->getGraphicPipeline()->scissor);
 
-        VkDeviceSize offset[] = {};
+        VkDeviceSize offset[] = {0};
         vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer, offset);
         vkCmdBindIndexBuffer(commandBuffer, *indexBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
 

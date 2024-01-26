@@ -25,6 +25,7 @@ struct Vert2{
 
 template <class T>
 class Vertex {
+public:
     std::vector<T> data;
 
 public:
