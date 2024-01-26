@@ -197,4 +197,12 @@ void HkSwapchain::createFramebuffers(HkGraphicPipeline *pGraphicPipeline) {
     }
 }
 
+std::vector<VkImage> *HkSwapchain::getSwapchainImages() {
+    return &swapchainImages;
+}
+
+std::vector<VkFramebuffer> *HkSwapchain::getSwapchainFramebuffers() {
+    return &swapchainFramebuffers;
+}
+
 

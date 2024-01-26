@@ -96,24 +96,9 @@ VkRenderPass *HkGraphicPipeline::getRenderPass() {
 }
 
 void HkGraphicPipeline::fillDefaultCreateInfo() {
-//vert
-    attributeDescription[0].binding = 0;
-    attributeDescription[0].location = 0;
-    attributeDescription[0].format = VK_FORMAT_R32G32_SFLOAT;
-    attributeDescription[0].offset = offsetof(Vertex, pos);
-    //color
-    attributeDescription[1].binding = 0;
-    attributeDescription[1].location = 1;
-    attributeDescription[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attributeDescription[1].offset = offsetof(Vertex, color);
-
-    bindingDescription.binding = 0;
-    bindingDescription.stride = sizeof(Vertex);
-    bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 1;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.vertexBindingDescriptionCount = static_cast<uint32_t>(bindingDescription.size());
+    vertexInputInfo.pVertexBindingDescriptions = bindingDescription.data();
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescription.size());
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescription.data();
 
@@ -216,5 +201,13 @@ void HkGraphicPipeline::fillDefaultCreateInfo() {
 
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
+
+    clearColorValue = {0, 0, 0, 1};
+    renderArea.extent = pSwapchain->getSwapExtent();
+    renderArea.offset = {0, 0};
+}
+
+VkPipeline *HkGraphicPipeline::getPipeline() {
+    return pGraphicPipeline;
 }
 

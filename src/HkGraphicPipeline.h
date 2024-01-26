@@ -11,11 +11,6 @@
 #include "HkSwapchain.h"
 #include <glm/glm.hpp>
 
-struct Vertex{
-    glm::vec2 pos;
-    glm::vec3 color;
-};
-
 class HkGraphicPipeline {
 private:
     HkDevice* pDevice = nullptr;
@@ -33,8 +28,8 @@ public:
     };
 
     //VkPipeline
-    std::array<VkVertexInputAttributeDescription, 2> attributeDescription{};
-    VkVertexInputBindingDescription bindingDescription{};
+    std::vector<VkVertexInputAttributeDescription> attributeDescription{};
+    std::vector<VkVertexInputBindingDescription> bindingDescription{};
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     VkViewport viewport{};
@@ -54,6 +49,8 @@ public:
     VkRenderPassCreateInfo renderPassInfo{};
     VkSubpassDependency dependency{};
 
+    VkClearValue clearColorValue{};
+    VkRect2D renderArea{};
 
 
     HkGraphicPipeline(HkDevice* device, HkSwapchain* swapchain);
@@ -71,6 +68,7 @@ public:
 
     VkPipelineLayout* getPipelineLayout();
     VkRenderPass* getRenderPass();
+    VkPipeline* getPipeline();
 };
 
 

@@ -13,9 +13,13 @@ class HkSurface {
 protected:
     HkSurface(){};
     ~HkSurface()= default;
+
+    std::function<void()> callback;
 public:
     virtual VkSurfaceKHR* getSurface() = 0;
     virtual VkExtent2D getSurfaceExtent() = 0;
+    void setLoop(std::function<void()>callback);
+    void run();
 };
 
 

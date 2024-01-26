@@ -38,6 +38,9 @@ private:
     QueueFamilyIndices indices;
     SwapchainSupportDetails swapchainSupport;
 
+    VkQueue graphicQueue;
+    VkQueue presentQueue;
+
     std::vector<const char*> *requiredLayers = nullptr;
     std::vector<const char*> *requiredInstanceExtensions = nullptr;
     std::vector<const char*> *requiredDeviceExtensions = nullptr;
@@ -75,6 +78,8 @@ public:
     std::vector<const char*>* getRequiredInstanceExtensions();
     QueueFamilyIndices* getQueueFamilyIndices();
     VkDevice* getDevice();
+    VkQueue* getGraphicQueue();
+    VkQueue* getPresentQueue();
 private:
     bool checkLayerSupport();
     /// check for required extensions availability on physical device extensions list

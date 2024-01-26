@@ -43,6 +43,8 @@ public:
     /// \param instance vulkan instance
     void createSurface(HkDevice *hkDevice);
 
+
+
     VkSurfaceKHR* getSurface() override;
     xcb_connection_t* getConnection();
     xcb_window_t* getWindow();

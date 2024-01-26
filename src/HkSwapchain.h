@@ -25,7 +25,6 @@ private:
     std::vector<VkFramebuffer> swapchainFramebuffers;
 
 protected:
-    void setGraphicPipeline();
 
 public:
     HkSwapchain(HkDevice* device, HkSurface* surface);
@@ -35,6 +34,8 @@ public:
     void setPresentMode(VkPresentModeKHR presentMode1);
 
     std::vector<VkImageView>* getSwapchainImageViews();
+    std::vector<VkImage>* getSwapchainImages();
+    std::vector<VkFramebuffer>* getSwapchainFramebuffers();
 
     VkFormat getFormat();
 

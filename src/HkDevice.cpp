@@ -273,6 +273,9 @@ void HkDevice::createLogicalDevice() {
     if (vkCreateDevice(physicalDevice, &info, nullptr, &device) != VK_SUCCESS) {
         throw std::runtime_error("failed to create logical device");
     }
+
+    vkGetDeviceQueue(device, indices.graphicFamily.value(), 0, &graphicQueue);
+    vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
 void HkDevice::createSwapchain() {
@@ -285,6 +288,14 @@ QueueFamilyIndices *HkDevice::getQueueFamilyIndices() {
 
 VkDevice *HkDevice::getDevice() {
     return &device;
+}
+
+VkQueue *HkDevice::getGraphicQueue() {
+    return &graphicQueue;
+}
+
+VkQueue *HkDevice::getPresentQueue() {
+    return &presentQueue;
 }
 
 VkBool32

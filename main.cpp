@@ -1,4 +1,3 @@
-#include <iostream>
 #include "src/Hk.h"
 
 // TODO do some decision based on used window system manager name
@@ -13,7 +12,21 @@ HkDevice device;
 XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK), (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
 HkSwapchain swapchain(&device, &surface);
 HkGraphicPipeline graphicPipeline(&device, &swapchain);
-HkCommandPool commandPool(&device);
+HkCommandPool commandPool(&device, &swapchain, &graphicPipeline);
+
+Vertex<Vert2> vertices({
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+});
+Vertex<uint16_t> indices({
+    0, 1, 2, 2, 3, 0
+});
+VkBuffer vertexBuffer;
+VkDeviceMemory vertexBufferMemory;
+VkBuffer indicesBuffer;
+VkDeviceMemory indicesBufferMemory;
 
 int main() {
     device.setRequiredLayers(&requiredLayers1);
@@ -47,10 +60,32 @@ int main() {
     const std::vector<char> fragModule = HkGraphicPipeline::readFile("/disk0/clionProject/hakureiEngine/shaders/out/frag.spv");
     shaderStageCreateInfo[1].module = graphicPipeline.createShaderModule(&fragModule);
     shaderStageCreateInfo[1].pName = "main";
+
+    std::array<VkVertexInputAttributeDescription, 2> desc = Vert2::getAttribute();
+    VkVertexInputBindingDescription bindingDescription = Vert2::getBinding();
+
+    graphicPipeline.vertexInputInfo.vertexAttributeDescriptionCount = 2;
+    graphicPipeline.vertexInputInfo.pVertexAttributeDescriptions = Vert2::getAttribute().data();
+    graphicPipeline.vertexInputInfo.vertexBindingDescriptionCount = 1;
+    graphicPipeline.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     graphicPipeline.createGraphicsPipeline(shaderStageCreateInfo, 2);
 
     swapchain.createFramebuffers(&graphicPipeline);
 
     commandPool.fillDefaultCreateInfo();
     commandPool.createCommandPool();
+    commandPool.createCommandBuffers();
+
+    vertices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
+                                *device.getGraphicQueue(), vertexBuffer, vertexBufferMemory, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    indices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
+                               *device.getGraphicQueue(), indicesBuffer, indicesBufferMemory, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
+
+    surface.setLoop([](){
+        spdlog::debug("test");
+    });
+    surface.run();
 }
+
+
