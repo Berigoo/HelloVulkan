@@ -42,6 +42,7 @@ HkDevice::HkDevice(std::vector<const char *> *requiredLayers, std::vector<const 
 }
 
 bool HkDevice::checkLayerSupport() {
+    if(requiredLayers == nullptr) return false;
     uint32_t propCount = 0;
     vkEnumerateInstanceLayerProperties(&propCount, nullptr);
     if (propCount == 0) return false;
@@ -61,7 +62,7 @@ bool HkDevice::checkLayerSupport() {
 }
 
 HkDevice::HkDevice(VkInstance instance) {
-
+    this->instance = instance;
 }
 
 bool HkDevice::pickPhysicalDevice(VkQueueFlagBits flags, VkSurfaceKHR surface) {
@@ -77,9 +78,10 @@ bool HkDevice::pickPhysicalDevice(VkQueueFlagBits flags, VkSurfaceKHR surface) {
         bool isSwapchainSupported = false;
 
         // if the VK_KHR_SWAPCHAIN_EXTENSION_NAME supported then swapchain supported for this surface
-        if (isExtsSupported) {
+        if (isExtsSupported || requiredDeviceExtensions == nullptr) {
             swapchainSupport = findSwapchainSupport(phyDev, surface);
             isSwapchainSupported = !swapchainSupport.formats.empty() && !swapchainSupport.presentModes.empty();
+            isExtsSupported = true;
         }
 
         if (indices.isCompelete() && isExtsSupported && isSwapchainSupported) {
@@ -121,6 +123,7 @@ HkDevice::findQueueFamily(VkPhysicalDevice physicalDevice1, VkQueueFlagBits flag
 }
 
 bool HkDevice::checkExtensionsSupport(VkPhysicalDevice physicalDevice1) {
+    if(requiredDeviceExtensions == nullptr) return false;
     uint32_t extensionCount = 0;
     vkEnumerateDeviceExtensionProperties(physicalDevice1, nullptr, &extensionCount, nullptr);
     if (extensionCount == 0) throw std::runtime_error("Extension count 0");
@@ -261,8 +264,12 @@ void HkDevice::createLogicalDevice() {
     info.queueCreateInfoCount = static_cast<uint32_t>(queuesCreateInfo.size());
     info.pQueueCreateInfos = queuesCreateInfo.data();
     info.pEnabledFeatures = &physicalDeviceFeatures;
-    info.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtensions->size());
-    info.ppEnabledExtensionNames = requiredDeviceExtensions->data();
+    if(requiredDeviceExtensions != nullptr) {
+        info.enabledExtensionCount = static_cast<uint32_t>(requiredDeviceExtensions->size());
+        info.ppEnabledExtensionNames = requiredDeviceExtensions->data();
+    }else{
+        info.enabledExtensionCount = 0;
+    }
     if (enableValidationLayer && checkLayerSupport()) {
         info.enabledLayerCount = static_cast<uint32_t>(requiredLayers->size());
         info.ppEnabledLayerNames = requiredLayers->data();
@@ -296,6 +303,10 @@ VkQueue *HkDevice::getGraphicQueue() {
 
 VkQueue *HkDevice::getPresentQueue() {
     return &presentQueue;
+}
+
+void HkDevice::setInstance(VkInstance instance) {
+    this->instance = instance;
 }
 
 VkBool32

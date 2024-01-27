@@ -69,6 +69,8 @@ public:
     void createLogicalDevice();
     void createSwapchain();
 
+    void setInstance(VkInstance instance);
+
     void setRequiredLayers(std::vector<const char*> *layers);
     void setRequiredInstanceExtensions(std::vector<const char*> *exts);
     void setRequiredDeviceExtensions(std::vector<const char*> *exts);

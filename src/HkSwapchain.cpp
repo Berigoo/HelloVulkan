@@ -101,16 +101,18 @@ void HkSwapchain::createSwapchain() {
     info.preTransform = swapchainSupportInfo.capabilities.currentTransform;
     info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     info.clipped = VK_TRUE;
-    info.oldSwapchain = VK_NULL_HANDLE;
+    if(oldSwapchain) info.oldSwapchain = *oldSwapchain;
+    else info.oldSwapchain = VK_NULL_HANDLE;
 
-    if(vkCreateSwapchainKHR(*pDevice->getDevice(), &info, nullptr, &swapchain) != VK_SUCCESS){
+    swapchain = new VkSwapchainKHR {};
+    if(vkCreateSwapchainKHR(*pDevice->getDevice(), &info, nullptr, swapchain) != VK_SUCCESS){
         throw std::runtime_error("failed to create swapchain");
     }
 
     uint32_t imagesCount = 0;
-    vkGetSwapchainImagesKHR(*pDevice->getDevice(), swapchain, &imagesCount, nullptr);
+    vkGetSwapchainImagesKHR(*pDevice->getDevice(), *swapchain, &imagesCount, nullptr);
     swapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(*pDevice->getDevice(), swapchain, &imagesCount, swapchainImages.data());
+    vkGetSwapchainImagesKHR(*pDevice->getDevice(), *swapchain, &imagesCount, swapchainImages.data());
 }
 
 void HkSwapchain::setFormat(VkFormat format1) {
@@ -211,7 +213,7 @@ HkSyncObject *HkSwapchain::getSyncObject() {
 }
 
 VkSwapchainKHR *HkSwapchain::getSwapchain() {
-    return &swapchain;
+    return swapchain;
 }
 
 void HkSwapchain::cleanup() {
@@ -219,12 +221,13 @@ void HkSwapchain::cleanup() {
         vkDestroyImageView(*pDevice->getDevice(), swapchainImageViews[i], nullptr);
         vkDestroyFramebuffer(*pDevice->getDevice(), swapchainFramebuffers[i], nullptr);
     }
-    vkDestroySwapchainKHR(*pDevice->getDevice(), swapchain, nullptr);
+    if(oldSwapchain) vkDestroySwapchainKHR(*pDevice->getDevice(), *oldSwapchain, nullptr);
 }
 
 void HkSwapchain::recreateSwapchain(HkGraphicPipeline *pGraphicPipeline) {
     vkDeviceWaitIdle(*pDevice->getDevice());
     cleanup();
+    oldSwapchain = swapchain;
 
     createSwapchain();
     createImageViews(nullptr);

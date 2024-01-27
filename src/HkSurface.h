@@ -18,7 +18,6 @@ protected:
 public:
     bool windowResizedPoll = false;
 
-
     virtual VkSurfaceKHR* getSurface() = 0;
     virtual VkExtent2D getSurfaceExtent() = 0;
     void setLoop(std::function<void()>callback);

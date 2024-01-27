@@ -32,6 +32,7 @@ void HkCommandPool::createCommandBuffers() {
     commandBuffers.resize(pSwapchain->getSwapchainImages()->size());
 
     allocateInfo.commandBufferCount = pSwapchain->getSwapchainImages()->size();
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     allocateInfo.commandPool = *pCommandPool;
 
     if(vkAllocateCommandBuffers(*pDevice->getDevice(), &allocateInfo, commandBuffers.data()) != VK_SUCCESS){
