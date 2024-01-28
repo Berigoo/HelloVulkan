@@ -20,7 +20,7 @@ VkSurfaceKHR *GlfwSurface::getSurface() {
     return &surface;
 }
 
-void GlfwSurface::init(int width, int height, const char *title) {
+void GlfwSurface::createSurface(int width, int height, const char *title) {
     if(!glfwInit()) throw std::runtime_error("cannot init glfw");
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
     window = glfwCreateWindow(width, height, title, nullptr, nullptr);

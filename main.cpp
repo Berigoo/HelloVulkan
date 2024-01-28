@@ -11,12 +11,17 @@ std::vector<const char *> requiredDeviceExtensions1 = {VK_KHR_SWAPCHAIN_EXTENSIO
 
 HkDevice device;
 HkDevice imguiDevice;
+
 XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK),
                    (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
 GlfwSurface imguiSurface(&imguiDevice);
+
 HkSyncObject syncObject;
+
 HkSwapchain swapchain(&device, &surface, &syncObject);
+
 HkGraphicPipeline graphicPipeline(&device, &swapchain);
+
 HkCommandPool commandPool(&device, &swapchain, &graphicPipeline);
 
 Vertex<Vert2> vertices({
@@ -36,45 +41,58 @@ VkDeviceMemory indicesBufferMemory;
 ImguiVulkanGlfw imgui(&device, &imguiSurface);
 
 int main() {
+    // setting required extensions by device and instance, also setting required layers
     device.setRequiredLayers(&requiredLayers1);
     device.setRequiredInstanceExtensions(&requiredExtensionsXcb);
     device.setRequiredDeviceExtensions(&requiredDeviceExtensions1);
     device.createInstance();
 
-    uint32_t extCount;
-    const char** exts = glfwGetRequiredInstanceExtensions(&extCount);
-    std::vector<const char*> glfwExts(extCount);
-    for(int i=0; i<extCount; i++)glfwExts[i] = exts[i];
+    // its has same vulkan instance
     imguiDevice.setInstance(device.getInstance());
 
-
+    // creating window needed variable along with VkSurface
     surface.createSurface(&device);
-    imguiSurface.init(100, 100, "imgui");
+    imguiSurface.createSurface(100, 100, "imgui");
 
+    // pick suitable physical device, queue family, and swapchain support details based on current surface
     if (!device.pickPhysicalDevice(VK_QUEUE_GRAPHICS_BIT, *surface.getSurface())) {
         spdlog::error("failed picking suitable physical device");
         return 0;
     }
-    device.createLogicalDevice();
-
     if (!imguiDevice.pickPhysicalDevice(VK_QUEUE_GRAPHICS_BIT, *imguiSurface.getSurface())) {
         spdlog::error("failed picking suitable physical device");
         return 0;
     }
+
+    // creating logical device, based on previous value. also creating VkQueue for graphic and present
+    device.createLogicalDevice();
     imguiDevice.createLogicalDevice();
 
+    // creating another vulkan things, like swapchain, framebuffer, image, etc. in imgui way
     imgui.init();
 
+    // setting desired value of present mode, for swapchain later
     swapchain.setPresentMode(VK_PRESENT_MODE_MAILBOX_KHR);
+
+    // creating swapchain, and image
     swapchain.createSwapchain();
     // TODO make the class have struct create info (the struct not passed on parameter)
+    // creating imageView
     swapchain.createImageViews(nullptr);
 
+    // creating semaphores, and fence. the size same as the size of image
     syncObject.initSyncObjs(swapchain.getSwapchainImages()->size(), *device.getDevice());
 
+    // fill struct members on class with default value
     graphicPipeline.fillDefaultCreateInfo();
+
+    // creating pipeline layout
     graphicPipeline.createPipelineLayout();
+
+    // creating renderPass based on previous value
     graphicPipeline.createRenderPass();
+
+    // setting up shader stage things for creating graphicPipeline
     VkPipelineShaderStageCreateInfo shaderStageCreateInfo[2] = {};
     shaderStageCreateInfo[0].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStageCreateInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
@@ -96,28 +114,39 @@ int main() {
     graphicPipeline.vertexInputInfo.pVertexAttributeDescriptions = Vert2::getAttribute().data();
     graphicPipeline.vertexInputInfo.vertexBindingDescriptionCount = 1;
     graphicPipeline.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    // creating graphic pipeline with this shader stage, and the rest with default value
     graphicPipeline.createGraphicsPipeline(shaderStageCreateInfo, 2);
 
+    // creating swapchain framebuffer based on graphicPipeline class member value
     swapchain.createFramebuffers(&graphicPipeline);
 
+    // fill struct members on class with default value
     commandPool.fillDefaultCreateInfo();
+
+    // creating command pool
     commandPool.createCommandPool();
+
+    // create command buffer with size same as swapchain images size
     commandPool.createCommandBuffers();
 
+    // creating vertex buffer
     vertices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
                                 *device.getGraphicQueue(), vertexBuffer, vertexBufferMemory,
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    // creating indices buffer
     indices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
                                *device.getGraphicQueue(), indicesBuffer, indicesBufferMemory,
                                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     bool showDemoWindow = true;
     uint32_t currentFrame = 0;
-    ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 0.00f);
+
+    // set loop func callback
     surface.setLoop([&]() {
 
 
-        // imgui
+        // imgui glfw poll event
         glfwPollEvents();
 
         ImGui_ImplVulkan_NewFrame();
@@ -128,6 +157,7 @@ int main() {
             ImGui::ShowDemoWindow(&showDemoWindow);
         }
 
+        // imgui render draw data, adn then present it
         imgui.renderAndPresent(clearColor);
 
 
@@ -159,7 +189,7 @@ int main() {
 
         vkResetFences(*device.getDevice(), 1, &swapchain.getSyncObject()->gpuDoneFence[currentFrame]);
 
-        vkResetCommandBuffer(commandPool.getCommandBuffers()->data()[currentFrame], 0);
+        vkResetCommandBuffer((*commandPool.getCommandBuffers())[currentFrame], 0);
         // TODO make this func inside commandPool class
         util::recordFrameBuffer(&commandPool, currentFrame, &vertexBuffer, &indicesBuffer, indices.data.size(),
                                 imageIndex);
@@ -168,7 +198,7 @@ int main() {
         VkSubmitInfo submitInfo{};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         submitInfo.commandBufferCount = 1;
-        submitInfo.pCommandBuffers = &commandPool.getCommandBuffers()->data()[currentFrame];
+        submitInfo.pCommandBuffers = &(*commandPool.getCommandBuffers())[currentFrame];
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = &swapchain.getSyncObject()->imageAvailableSemaphore[currentFrame];
         submitInfo.signalSemaphoreCount = 1;

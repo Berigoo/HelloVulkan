@@ -11,7 +11,7 @@ HkCommandPool::HkCommandPool(HkDevice *pDevice, HkSwapchain *pSwapchain, HkGraph
 }
 
 void HkCommandPool::createCommandPool() {
-    if(pCommandPool) free(pCommandPool);
+    if(pCommandPool) vkDestroyCommandPool(*pDevice->getDevice(), *pCommandPool, nullptr);
     pCommandPool = new VkCommandPool {};
 
     if(vkCreateCommandPool(*pDevice->getDevice(), &commandPoolInfo, nullptr, pCommandPool) != VK_SUCCESS){

@@ -18,7 +18,7 @@ public:
 
     ~GlfwSurface()= default;
 
-    void init(int width, int height, const char* title);
+    void createSurface(int width, int height, const char* title);
 
     VkSurfaceKHR * getSurface() override;
 

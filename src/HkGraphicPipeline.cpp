@@ -40,7 +40,7 @@ HkGraphicPipeline::HkGraphicPipeline(HkDevice *device, HkSwapchain* swapchain) {
 }
 
 void HkGraphicPipeline::createPipelineLayout() {
-    if(pPipelineLayout) free(pPipelineLayout);
+    if(pPipelineLayout) vkDestroyPipelineLayout(*pDevice->getDevice(), *pPipelineLayout, nullptr);
     pPipelineLayout = new VkPipelineLayout{};
     if(vkCreatePipelineLayout(*pDevice->getDevice(), &pipelineLayoutInfo, nullptr, pPipelineLayout) != VK_SUCCESS){
         throw std::runtime_error("failed to create pipeline layout");
