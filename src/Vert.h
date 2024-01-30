@@ -25,18 +25,27 @@ struct Vert2{
 
 template <class T>
 class Vertex {
+private:
+    VkBuffer buffer;
+    VkDeviceMemory bufferMemory;
+
 public:
     std::vector<T> data;
+
 
 public:
     Vertex(std::vector<T> vertices);
 
-    void createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkCommandPool commandPool, VkQueue &queue,
-                            VkBuffer &outVertexBuffer, VkDeviceMemory &outVertexBufferMemory, int usageFlag);
+    void createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkCommandPool commandPool,
+                            VkQueue &queue, int usageFlag);
+
+    VkBuffer getBuffer();
+    VkDeviceMemory getBufferMemory();
 private:
     void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, int usageFlag, int memPropFlag, VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory);
     void copyBuffer(VkBuffer &src, VkBuffer &dst, VkCommandPool &commandPool, VkDevice &device, VkQueue &queue);
 };
+
 
 template class Vertex<Vert2>;
 template class Vertex<uint16_t>;

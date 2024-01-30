@@ -4,6 +4,8 @@
 
 #include "Vert.h"
 
+#pragma clang diagnostic push
+#pragma ide diagnostic ignored "UnreachableCode"
 VkVertexInputBindingDescription Vert2::getBinding() {
     VkVertexInputBindingDescription description{};
     description.binding = 0;
@@ -14,7 +16,7 @@ VkVertexInputBindingDescription Vert2::getBinding() {
 }
 
 std::array<VkVertexInputAttributeDescription, 2> Vert2::getAttribute() {
-    std::array<VkVertexInputAttributeDescription, 2> description;
+    std::array<VkVertexInputAttributeDescription, 2> description{};
 
     description[0].binding = 0;
     description[0].location = 0;
@@ -64,10 +66,15 @@ void Vertex<T>::createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, i
 
 template<class T>
 void Vertex<T>::createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice device, VkCommandPool commandPool,
-                                   VkQueue &queue,
-                                   VkBuffer &outVertexBuffer, VkDeviceMemory &outVertexBufferMemory, int usageFlag) {
+                                   VkQueue &queue, int usageFlag) {
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemoryBuffer;
+
+    if(buffer != VK_NULL_HANDLE){
+        vkQueueWaitIdle(queue);
+        vkDestroyBuffer(device, buffer, nullptr);
+        vkFreeMemory(device, bufferMemory, nullptr);
+    }
 
     createBuffer(physicalDevice, device, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_COHERENT_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, stagingBuffer, stagingMemoryBuffer);
 
@@ -77,12 +84,13 @@ void Vertex<T>::createVertexBuffer(VkPhysicalDevice physicalDevice, VkDevice dev
     memcpy(pData, data.data(), size);
     vkUnmapMemory(device, stagingMemoryBuffer);
 
-    createBuffer(physicalDevice, device, usageFlag, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, outVertexBuffer, outVertexBufferMemory);
+    createBuffer(physicalDevice, device, usageFlag, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, buffer, bufferMemory);
 
-    copyBuffer(stagingBuffer, outVertexBuffer, commandPool, device, queue);
+    copyBuffer(stagingBuffer, buffer, commandPool, device, queue);
 
     vkDestroyBuffer(device, stagingBuffer, nullptr);
     vkFreeMemory(device, stagingMemoryBuffer, nullptr);
+
 }
 
 template<class T>
@@ -110,7 +118,7 @@ void Vertex<T>::copyBuffer(VkBuffer &src, VkBuffer &dst, VkCommandPool &commandP
     bufferCopy.dstOffset = 0;
     bufferCopy.size = size;
 
-    vkCmdCopyBuffer(commandBuffer, src, dst, 1, &bufferCopy);
+    vkCmdCopyBuffer(commandBuffer, src, buffer, 1, &bufferCopy);
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -118,8 +126,22 @@ void Vertex<T>::copyBuffer(VkBuffer &src, VkBuffer &dst, VkCommandPool &commandP
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
+    vkQueueWaitIdle(queue);
     vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
     vkQueueWaitIdle(queue);
 
     vkFreeCommandBuffers(device, commandPool, 1, &commandBuffer);
 }
+
+template<class T>
+VkDeviceMemory Vertex<T>::getBufferMemory() {
+    return bufferMemory;
+}
+
+template<class T>
+VkBuffer Vertex<T>::getBuffer() {
+    return buffer;
+}
+
+
+#pragma clang diagnostic pop

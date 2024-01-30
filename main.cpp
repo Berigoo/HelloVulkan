@@ -1,9 +1,6 @@
 #include "src/Hk.h"
 
 // TODO do some decision based on used window system manager name
-//  not hard coded like this
-//  maybe, every surface class must have its own must-needed extensions name
-//  then the value pushed-back into device class required-extensions
 std::vector<const char *> requiredLayers1 = {"VK_LAYER_KHRONOS_validation"};
 std::vector<const char *> requiredExtensionsXcb = {VK_KHR_SURFACE_EXTENSION_NAME, VK_KHR_XCB_SURFACE_EXTENSION_NAME,
                                                    VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
@@ -24,19 +21,15 @@ HkGraphicPipeline graphicPipeline(&device, &swapchain);
 
 HkCommandPool commandPool(&device, &swapchain, &graphicPipeline);
 
-Vertex<Vert2> vertices({
+static Vertex<Vert2> vertices({
                                {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
                                {{0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f}},
                                {{0.5f,  0.5f},  {0.0f, 0.0f, 1.0f}},
                                {{-0.5f, 0.5f},  {1.0f, 1.0f, 1.0f}}
                        });
-Vertex<uint16_t> indices({
+static Vertex<uint16_t> indices({
                                  0, 1, 2, 2, 3, 0
                          });
-VkBuffer vertexBuffer;
-VkDeviceMemory vertexBufferMemory;
-VkBuffer indicesBuffer;
-VkDeviceMemory indicesBufferMemory;
 
 ImguiVulkanGlfw imgui(&device, &imguiSurface);
 
@@ -131,11 +124,11 @@ int main() {
 
     // creating vertex buffer
     vertices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
-                                *device.getGraphicQueue(), vertexBuffer, vertexBufferMemory,
+                                *device.getGraphicQueue(),
                                 VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     // creating indices buffer
     indices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
-                               *device.getGraphicQueue(), indicesBuffer, indicesBufferMemory,
+                               *device.getGraphicQueue(),
                                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
     bool showDemoWindow = true;
@@ -149,19 +142,7 @@ int main() {
         // imgui glfw poll event
         glfwPollEvents();
 
-        ImGui_ImplVulkan_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-        if(showDemoWindow){
-            ImGui::ShowDemoWindow(&showDemoWindow);
-        }
-
-        // imgui render draw data, adn then present it
-        imgui.renderAndPresent(clearColor);
-
-
-        // acquire image, render into image, present into surface
+             // acquire image, render into image, present into surface
         vkDeviceWaitIdle(*device.getDevice());
         vkWaitForFences(*device.getDevice(), 1, &swapchain.getSyncObject()->gpuDoneFence[currentFrame], VK_TRUE,
                         UINT64_MAX);
@@ -191,7 +172,7 @@ int main() {
 
         vkResetCommandBuffer((*commandPool.getCommandBuffers())[currentFrame], 0);
         // TODO make this func inside commandPool class
-        util::recordFrameBuffer(&commandPool, currentFrame, &vertexBuffer, &indicesBuffer, indices.data.size(),
+        util::recordFrameBuffer(&commandPool, currentFrame, vertices.getBuffer(), indices.getBuffer(), indices.data.size(),
                                 imageIndex);
 
         VkPipelineStageFlags flag = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -219,9 +200,88 @@ int main() {
 
         vkQueuePresentKHR(*device.getPresentQueue(), &presentInfoKhr);
 
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        if(showDemoWindow){
+            ImGui::ShowDemoWindow(&showDemoWindow);
+        }
+
+        // imgui window
+        {
+            ImGui::Begin("Vulkan Debug");
+
+            ImGui::Checkbox("Demo Window", &showDemoWindow);
+
+            if(ImGui::CollapsingHeader("Vertices")) {
+                static std::vector<std::vector<float>> vet2(vertices.data.size(), std::vector<float>(2));
+                static std::vector<std::vector<float>> col2(vertices.data.size(), std::vector<float>(3));
+                for (int i = 0; i < vertices.data.size(); i++) {
+                    ImGui::PushID(i);
+                    vet2[i][0] = vertices.data[i].location.x;
+                    vet2[i][1] = vertices.data[i].location.y;
+                    col2[i][0] = vertices.data[i].color.r;
+                    col2[i][1] = vertices.data[i].color.g;
+                    col2[i][2] = vertices.data[i].color.b;
+
+                    ImGui::Text("Location: ");
+                    ImGui::SameLine(80);
+                    ImGui::InputFloat2("##", vet2[i].data());
+                    ImGui::Text("\tColor");
+                    ImGui::SameLine(80);
+                    ImGui::ColorEdit3("##", col2[i].data());
+                    ImGui::PopID();
+
+                    vertices.data[i].location.x = vet2[i][0];
+                    vertices.data[i].location.y = vet2[i][1];
+
+                    vertices.data[i].color.r = col2[i][0];
+                    vertices.data[i].color.g = col2[i][1];
+                    vertices.data[i].color.b = col2[i][2];
+                }
+            }
+            if(ImGui::CollapsingHeader("Indices")){
+                static std::vector<std::vector<int>> index(indices.data.size(), std::vector<int>(1));
+                for(int i=0; i<indices.data.size(); i++){
+                    ImGui::PushID(i);
+                    index[i][0] = indices.data[i];
+
+                    ImGui::Text("Index: ");
+                    ImGui::SameLine(80);
+                    ImGui::InputInt("##", index[i].data());
+                    index[i][0] = abs(index[i][0]);;
+                    ImGui::PopID();
+
+                    indices.data[i] = index[i][0];
+                }
+            }
+
+            if(ImGui::CollapsingHeader("Info")){
+                ImGui::Text("Current swapchain extent:\t(%u, %u)", swapchain.getSwapExtent().width,
+                            swapchain.getSwapExtent().height);
+            }
+
+            ImGui::End();
+        }
+
+        // imgui render draw data, adn then present it
+        imgui.renderAndPresent(clearColor);
+
+        // recreating vertex buffer
+        vertices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
+                                    *device.getGraphicQueue(),
+                                    VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+        // recreating indices buffer
+        indices.createVertexBuffer(*device.getPhysicalDevice(), *device.getDevice(), *commandPool.getCommandPool(),
+                                   *device.getGraphicQueue(),
+                                   VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+
         currentFrame = (currentFrame + 1) % swapchain.getSwapchainImages()->size();
     });
     surface.run();
+
+
 }
 
 

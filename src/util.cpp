@@ -4,8 +4,8 @@
 #include "util.h"
 
 namespace util{
-    void recordFrameBuffer(HkCommandPool *pCommandPool, uint32_t commandBufferIndex, VkBuffer *vertexBuffer,
-                           VkBuffer *indexBuffer, uint32_t indexSize, uint32_t &imageIndex) {
+    void recordFrameBuffer(HkCommandPool *pCommandPool, uint32_t commandBufferIndex, VkBuffer_T *vertexBuffer,
+                           VkBuffer_T *indexBuffer, uint32_t indexSize, uint32_t &imageIndex) {
         VkResult res;
         VkCommandBuffer commandBuffer = (*pCommandPool->getCommandBuffers())[commandBufferIndex];
 
@@ -40,12 +40,17 @@ namespace util{
         viewport.height = (float)extent2D.height;
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
+
+        VkRect2D scissor{};
+        scissor.offset = {0, 0};
+        scissor.extent = extent2D;
+
         vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &pCommandPool->getGraphicPipeline()->scissor);
+        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
         VkDeviceSize offset[] = {0};
-        vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffer, offset);
-        vkCmdBindIndexBuffer(commandBuffer, *indexBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &vertexBuffer, offset);
+        vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VkIndexType::VK_INDEX_TYPE_UINT16);
 
         vkCmdDrawIndexed(commandBuffer, indexSize, 1, 0, 0, 0);
 

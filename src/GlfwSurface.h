@@ -11,7 +11,6 @@
 class GlfwSurface : public HkSurface{
 private:
     GLFWwindow* window = nullptr;
-    VkSurfaceKHR surface;
     HkDevice* pDevice = nullptr;
 public:
     GlfwSurface(HkDevice *pDevice);

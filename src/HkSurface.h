@@ -15,6 +15,10 @@ protected:
     ~HkSurface()= default;
 
     std::function<void()> callback;
+
+    bool closeSignal = false;
+
+    VkSurfaceKHR surface;
 public:
     bool windowResizedPoll = false;
 
@@ -22,6 +26,11 @@ public:
     virtual VkExtent2D getSurfaceExtent() = 0;
     void setLoop(std::function<void()>callback);
     void run();
+
+    void setCloseSignal(bool val);
+
+private:
+    void cleanup(VkInstance *pInstance);
 };
 
 

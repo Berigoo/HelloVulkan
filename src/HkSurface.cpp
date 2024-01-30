@@ -7,9 +7,19 @@
 void HkSurface::run() {
     while(1) {
         callback();
+
+        if(closeSignal)break;
     }
 }
 
 void HkSurface::setLoop(std::function<void()> callback) {
     this->callback = callback;
+}
+
+void HkSurface::setCloseSignal(bool val) {
+    closeSignal = val;
+}
+
+void HkSurface::cleanup(VkInstance *pInstance) {
+    vkDestroySurfaceKHR(*pInstance, surface, nullptr);
 }

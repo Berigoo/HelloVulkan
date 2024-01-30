@@ -20,8 +20,6 @@ private:
     xcb_screen_t* screen;
     xcb_window_t windowId;
 
-    VkSurfaceKHR surface;
-
     std::map<std::string, xcb_atom_t> atoms;
 public:
     /// creating essential xcb
