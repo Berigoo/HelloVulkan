@@ -41,10 +41,17 @@ public:
 
     VkBuffer getBuffer();
     VkDeviceMemory getBufferMemory();
+    void cleanup(VkDevice device);
 private:
     void createBuffer(VkPhysicalDevice physicalDevice, VkDevice device, int usageFlag, int memPropFlag, VkBuffer &outBuffer, VkDeviceMemory &outBufferMemory);
     void copyBuffer(VkBuffer &src, VkBuffer &dst, VkCommandPool &commandPool, VkDevice &device, VkQueue &queue);
 };
+
+template<class T>
+void Vertex<T>::cleanup(VkDevice device) {
+    if(buffer != VK_NULL_HANDLE) vkDestroyBuffer(device, buffer, nullptr);
+    if(bufferMemory != VK_NULL_HANDLE) vkFreeMemory(device, bufferMemory, nullptr);
+}
 
 
 template class Vertex<Vert2>;

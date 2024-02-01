@@ -25,6 +25,8 @@ public:
 
     GLFWwindow* getWindow();
 
+    void cleanup(VkInstance* pInstance) override;
+
 private:
 
 };

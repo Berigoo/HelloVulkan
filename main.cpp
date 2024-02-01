@@ -6,21 +6,28 @@ std::vector<const char *> requiredExtensionsXcb = {VK_KHR_SURFACE_EXTENSION_NAME
                                                    VK_EXT_DEBUG_UTILS_EXTENSION_NAME};
 std::vector<const char *> requiredDeviceExtensions1 = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
+// class that hold vulkan instance, physical device, logical device.
 HkDevice device;
 HkDevice imguiDevice;
 
+// class that holds VkSurface, and several variable that needed when creating surface
 XcbSurface surface(500, 800, (XCB_CW_BACK_PIXEL | XCB_CW_EVENT_MASK),
                    (XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_STRUCTURE_NOTIFY));
 GlfwSurface imguiSurface(&imguiDevice);
 
-HkSyncObject syncObject;
+// class that hold 2 different semaphores, and 1 fence
+HkSyncObject syncObject(&device);
 
+// class that hold swapchain, swapchain support info, images, imageViews, framebuffers
 HkSwapchain swapchain(&device, &surface, &syncObject);
 
+// class that hold graphicPipeline, pipeline layout, render pass, and createInfo structs that needed
 HkGraphicPipeline graphicPipeline(&device, &swapchain);
 
+// class that holds commandPool, commandBuffers, and createInfo structs
 HkCommandPool commandPool(&device, &swapchain, &graphicPipeline);
 
+// template claass that holds VkBuffer, and VkDeviceMemory
 static Vertex<Vert2> vertices({
                                {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
                                {{0.5f,  -0.5f}, {0.0f, 1.0f, 0.0f}},
@@ -31,7 +38,8 @@ static Vertex<uint16_t> indices({
                                  0, 1, 2, 2, 3, 0
                          });
 
-ImguiVulkanGlfw imgui(&device, &imguiSurface);
+// imgui class with vulkan implementation
+ImguiVulkanGlfw imgui(&imguiDevice, &imguiSurface);
 
 int main() {
     // setting required extensions by device and instance, also setting required layers
@@ -41,7 +49,8 @@ int main() {
     device.createInstance();
 
     // its has same vulkan instance
-    imguiDevice.setInstance(device.getInstance());
+    imguiDevice.setInstance(*device.getInstance());
+    imguiDevice.setRequiredDeviceExtensions(&requiredDeviceExtensions1);
 
     // creating window needed variable along with VkSurface
     surface.createSurface(&device);
@@ -61,7 +70,7 @@ int main() {
     device.createLogicalDevice();
     imguiDevice.createLogicalDevice();
 
-    // creating another vulkan things, like swapchain, framebuffer, image, etc. in imgui way
+    // creating another vulkan things for imgui, like swapchain, framebuffer, image, etc. in imgui way
     imgui.init();
 
     // setting desired value of present mode, for swapchain later
@@ -71,9 +80,9 @@ int main() {
     swapchain.createSwapchain();
     // TODO make the class have struct create info (the struct not passed on parameter)
     // creating imageView
-    swapchain.createImageViews(nullptr);
+    swapchain.createImageViews();
 
-    // creating semaphores, and fence. the size same as the size of image
+    // creating semaphores, and fence. the size same as the size of images
     syncObject.initSyncObjs(swapchain.getSwapchainImages()->size(), *device.getDevice());
 
     // fill struct members on class with default value
@@ -91,13 +100,15 @@ int main() {
     shaderStageCreateInfo[0].stage = VK_SHADER_STAGE_VERTEX_BIT;
     const std::vector<char> vertModule = HkGraphicPipeline::readFile(
             "/disk0/clionProject/hakureiEngine/shaders/out/vert.spv");
-    shaderStageCreateInfo[0].module = graphicPipeline.createShaderModule(&vertModule);
+    VkShaderModule vertShaderModule = graphicPipeline.createShaderModule(&vertModule);
+    shaderStageCreateInfo[0].module = vertShaderModule;
     shaderStageCreateInfo[0].pName = "main";
     shaderStageCreateInfo[1].sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     shaderStageCreateInfo[1].stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     const std::vector<char> fragModule = HkGraphicPipeline::readFile(
             "/disk0/clionProject/hakureiEngine/shaders/out/frag.spv");
-    shaderStageCreateInfo[1].module = graphicPipeline.createShaderModule(&fragModule);
+    VkShaderModule fragShaderModule = graphicPipeline.createShaderModule(&fragModule);
+    shaderStageCreateInfo[1].module = fragShaderModule;
     shaderStageCreateInfo[1].pName = "main";
 
     std::array<VkVertexInputAttributeDescription, 2> desc = Vert2::getAttribute();
@@ -109,6 +120,10 @@ int main() {
     graphicPipeline.vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     // creating graphic pipeline with this shader stage, and the rest with default value
     graphicPipeline.createGraphicsPipeline(shaderStageCreateInfo, 2);
+
+    // destroy shader modules
+    vkDestroyShaderModule(*graphicPipeline.getHKDevice()->getDevice(), vertShaderModule, nullptr);
+    vkDestroyShaderModule(*graphicPipeline.getHKDevice()->getDevice(), fragShaderModule, nullptr);
 
     // creating swapchain framebuffer based on graphicPipeline class member value
     swapchain.createFramebuffers(&graphicPipeline);
@@ -131,18 +146,39 @@ int main() {
                                *device.getGraphicQueue(),
                                VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 
+    xcb_generic_event_t* event = nullptr;
     bool showDemoWindow = true;
     uint32_t currentFrame = 0;
     ImVec4 clearColor = ImVec4(0.45f, 0.55f, 0.60f, 0.00f);
 
+    // xcb atoms settings
+    surface.updateWindowProperty("WM_PROTOCOLS", "WM_DELETE_WINDOW", "Window Exit");
+
     // set loop func callback
     surface.setLoop([&]() {
 
+        // xcb poll event
+        if(event != nullptr) free(event);
+        event = xcb_poll_for_event(surface.getConnection());
+        if(event != nullptr){
+            switch (event->response_type & 0x7f) {
+                case XCB_EXPOSE:
+                    surface.windowResizedPoll = true;
+                    break;
+                case XCB_CLIENT_MESSAGE:
+                    const auto* msg = reinterpret_cast<const xcb_client_message_event_t*>(event);
+                    if(msg->type == surface.getAtoms()->at("Window Exit")[0] && msg->data.data32[0] == surface.getAtoms()->at("Window Exit")[1]){
+                        surface.setCloseSignal(true);
+                        break;
+                    }
+                    break;
+            }
+        }
 
         // imgui glfw poll event
         glfwPollEvents();
 
-             // acquire image, render into image, present into surface
+             /* acquire image, render into image, present into surface */
         vkDeviceWaitIdle(*device.getDevice());
         vkWaitForFences(*device.getDevice(), 1, &swapchain.getSyncObject()->gpuDoneFence[currentFrame], VK_TRUE,
                         UINT64_MAX);
@@ -199,7 +235,9 @@ int main() {
         presentInfoKhr.pImageIndices = &imageIndex;
 
         vkQueuePresentKHR(*device.getPresentQueue(), &presentInfoKhr);
+            /**************************************************/
 
+            // imgui
         ImGui_ImplVulkan_NewFrame();
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
@@ -265,7 +303,7 @@ int main() {
             ImGui::End();
         }
 
-        // imgui render draw data, adn then present it
+        // imgui render draw data, and then present it
         imgui.renderAndPresent(clearColor);
 
         // recreating vertex buffer
@@ -279,9 +317,27 @@ int main() {
 
         currentFrame = (currentFrame + 1) % swapchain.getSwapchainImages()->size();
     });
+
+    // run loop (not asynchronous)
     surface.run();
 
+    vkDeviceWaitIdle(*device.getDevice());
+    vkDeviceWaitIdle(*imguiDevice.getDevice());
+    // cleaning up
+    swapchain.cleanup();
+    imgui.cleanup(*imguiDevice.getInstance(), *imguiDevice.getDevice(), imguiSurface.getSurface());
+    vertices.cleanup(*device.getDevice());
+    indices.cleanup(*device.getDevice());
+    syncObject.cleanup();
+    commandPool.cleanup();
+    surface.cleanup(device.getInstance());
+    imguiSurface.cleanup(imguiDevice.getInstance());
+    graphicPipeline.cleanup();
+    device.cleanup();
+    imguiDevice.cleanup();
 
+    // call when all device with same instance get destroyed
+    device.destroyInstance();
 }
 
 

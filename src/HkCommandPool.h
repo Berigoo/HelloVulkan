@@ -19,7 +19,7 @@ private:
     HkSwapchain* pSwapchain = nullptr;
     HkGraphicPipeline* pGraphicPipeline = nullptr;
 
-    VkCommandPool* pCommandPool = nullptr;
+    VkCommandPool commandPool = nullptr;
     std::vector<VkCommandBuffer> commandBuffers;
 public:
     VkCommandPoolCreateInfo commandPoolInfo{};
@@ -38,6 +38,8 @@ public:
     HkGraphicPipeline* getGraphicPipeline();
     HkSwapchain* getSwapchain();
     VkCommandPool* getCommandPool();
+
+    void cleanup();
 };
 
 

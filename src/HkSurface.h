@@ -29,8 +29,8 @@ public:
 
     void setCloseSignal(bool val);
 
-private:
-    void cleanup(VkInstance *pInstance);
+public:
+    virtual void cleanup(VkInstance *pInstance);
 };
 
 

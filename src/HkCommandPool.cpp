@@ -11,10 +11,9 @@ HkCommandPool::HkCommandPool(HkDevice *pDevice, HkSwapchain *pSwapchain, HkGraph
 }
 
 void HkCommandPool::createCommandPool() {
-    if(pCommandPool) vkDestroyCommandPool(*pDevice->getDevice(), *pCommandPool, nullptr);
-    pCommandPool = new VkCommandPool {};
+    if(commandPool != VK_NULL_HANDLE) vkDestroyCommandPool(*pDevice->getDevice(), commandPool, nullptr);
 
-    if(vkCreateCommandPool(*pDevice->getDevice(), &commandPoolInfo, nullptr, pCommandPool) != VK_SUCCESS){
+    if(vkCreateCommandPool(*pDevice->getDevice(), &commandPoolInfo, nullptr, &commandPool) != VK_SUCCESS){
         throw std::runtime_error("failed to create command pool");
     }
 }
@@ -33,7 +32,7 @@ void HkCommandPool::createCommandBuffers() {
 
     allocateInfo.commandBufferCount = pSwapchain->getSwapchainImages()->size();
     allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocateInfo.commandPool = *pCommandPool;
+    allocateInfo.commandPool = commandPool;
 
     if(vkAllocateCommandBuffers(*pDevice->getDevice(), &allocateInfo, commandBuffers.data()) != VK_SUCCESS){
         throw std::runtime_error("failed to create command buffers");
@@ -53,5 +52,9 @@ HkSwapchain *HkCommandPool::getSwapchain() {
 }
 
 VkCommandPool *HkCommandPool::getCommandPool() {
-    return pCommandPool;
+    return &commandPool;
+}
+
+void HkCommandPool::cleanup() {
+    vkDestroyCommandPool(*pDevice->getDevice(), commandPool, nullptr);
 }

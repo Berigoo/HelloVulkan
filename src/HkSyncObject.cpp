@@ -28,3 +28,19 @@ void HkSyncObject::initSyncObjs(size_t size, VkDevice &device) {
         }
     }
 }
+
+void HkSyncObject::cleanup() {
+    for(int i=0; i<gpuDoneFence.size(); i++){
+        vkDestroyFence(*pDevice->getDevice(), gpuDoneFence[i], nullptr);
+    }
+    for(int i=0; i<imageAvailableSemaphore.size(); i++){
+        vkDestroySemaphore(*pDevice->getDevice(), imageAvailableSemaphore[i], nullptr);
+    }
+    for(int i=0; i<renderFinishedSemaphore.size(); i++){
+        vkDestroySemaphore(*pDevice->getDevice(), renderFinishedSemaphore[i], nullptr);
+    }
+}
+
+HkSyncObject::HkSyncObject(HkDevice *device) {
+    this->pDevice = device;
+}

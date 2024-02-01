@@ -8,7 +8,7 @@ find_package(X11 REQUIRED)
 find_package(glm CONFIG REQUIRED)
 find_package(glfw3 3.3 REQUIRED)
 
-set(IMGUI_DIR /usr/include/imgui-1.90.1)
+set(IMGUI_DIR /usr/include/imgui-1.90.1)    # IMGUI directory
 include_directories(${IMGUI_DIR} ${IMGUI_DIR}/backends)
 
 add_library(Core src/HkDevice.cpp src/HkDevice.h src/HkSwapchain.cpp src/HkSwapchain.h src/HkSurface.cpp src/HkSurface.h src/HkGraphicPipeline.cpp src/HkCommandPool.cpp src/util.cpp src/util.h src/Vert.h src/Vert.cpp src/HkSyncObject.h src/HkSyncObject.cpp src/XcbSurface.h src/XcbSurface.cpp src/GlfwSurface.h src/GlfwSurface.cpp)

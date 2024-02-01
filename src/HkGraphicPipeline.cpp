@@ -40,23 +40,21 @@ HkGraphicPipeline::HkGraphicPipeline(HkDevice *device, HkSwapchain* swapchain) {
 }
 
 void HkGraphicPipeline::createPipelineLayout() {
-    if(pPipelineLayout) vkDestroyPipelineLayout(*pDevice->getDevice(), *pPipelineLayout, nullptr);
-    pPipelineLayout = new VkPipelineLayout{};
-    if(vkCreatePipelineLayout(*pDevice->getDevice(), &pipelineLayoutInfo, nullptr, pPipelineLayout) != VK_SUCCESS){
+    if(pipelineLayout != VK_NULL_HANDLE) vkDestroyPipelineLayout(*pDevice->getDevice(), pipelineLayout, nullptr);
+    if(vkCreatePipelineLayout(*pDevice->getDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS){
         throw std::runtime_error("failed to create pipeline layout");
     }
 }
 
 void HkGraphicPipeline::createRenderPass() {
-    if(pRenderPass) free(pRenderPass);
-    pRenderPass = new VkRenderPass{};
-    if(vkCreateRenderPass(*pDevice->getDevice(), &renderPassInfo, nullptr, pRenderPass) != VK_SUCCESS){
+    if(renderPass != VK_NULL_HANDLE) vkDestroyRenderPass(*pDevice->getDevice(), renderPass, nullptr);
+    if(vkCreateRenderPass(*pDevice->getDevice(), &renderPassInfo, nullptr, &renderPass) != VK_SUCCESS){
         throw std::runtime_error("failed to create render pass");
     }
 }
 
 void HkGraphicPipeline::createGraphicsPipeline(VkPipelineShaderStageCreateInfo shaderStages[], uint32_t count) {
-    if(pGraphicPipeline) free(pGraphicPipeline);
+    if(graphicPipeline != VK_NULL_HANDLE) vkDestroyPipeline(*pDevice->getDevice(), graphicPipeline, nullptr);
     VkGraphicsPipelineCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     createInfo.stageCount = count;
@@ -70,29 +68,28 @@ void HkGraphicPipeline::createGraphicsPipeline(VkPipelineShaderStageCreateInfo s
     createInfo.pColorBlendState = &colorBlending;
     createInfo.pDynamicState = &dynamicState;
     createInfo.layout = *getPipelineLayout();
-    createInfo.renderPass = *pRenderPass;
+    createInfo.renderPass = renderPass;
     createInfo.subpass = 0;
     createInfo.basePipelineHandle = VK_NULL_HANDLE;
     createInfo.basePipelineIndex = -1;
 
-    pGraphicPipeline = new VkPipeline{};
-    if(vkCreateGraphicsPipelines(*pDevice->getDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, pGraphicPipeline) != VK_SUCCESS){
+    if(vkCreateGraphicsPipelines(*pDevice->getDevice(), VK_NULL_HANDLE, 1, &createInfo, nullptr, &graphicPipeline) != VK_SUCCESS){
         throw std::runtime_error("failed to create graphic pipeline");
     }
 }
 
 VkPipelineLayout *HkGraphicPipeline::getPipelineLayout() {
-    if(!pPipelineLayout){
+    if(!pipelineLayout){
         spdlog::error("pipeline layout null");
     }
-    return pPipelineLayout;
+    return &pipelineLayout;
 }
 
 VkRenderPass *HkGraphicPipeline::getRenderPass() {
-    if(!pRenderPass){
+    if(!renderPass){
         spdlog::error("render pass null");
     }
-    return pRenderPass;
+    return &renderPass;
 }
 
 void HkGraphicPipeline::fillDefaultCreateInfo() {
@@ -208,6 +205,20 @@ void HkGraphicPipeline::fillDefaultCreateInfo() {
 }
 
 VkPipeline *HkGraphicPipeline::getPipeline() {
-    return pGraphicPipeline;
+    return &graphicPipeline;
+}
+
+void HkGraphicPipeline::cleanup() {
+    vkDestroyPipeline(*pDevice->getDevice(), graphicPipeline, nullptr);
+    vkDestroyPipelineLayout(*pDevice->getDevice(), pipelineLayout, nullptr);
+    vkDestroyRenderPass(*pDevice->getDevice(), renderPass, nullptr);
+}
+
+HkDevice *HkGraphicPipeline::getHKDevice() const {
+    return pDevice;
+}
+
+HkSwapchain *HkGraphicPipeline::getHKSwapchain() const {
+    return pSwapchain;
 }
 

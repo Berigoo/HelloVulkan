@@ -16,8 +16,8 @@ private:
     HkSyncObject* pSyncObject = nullptr;
 
     SwapchainSupportDetails swapchainSupportInfo;
-    VkSwapchainKHR* swapchain = nullptr;
-    VkSwapchainKHR* oldSwapchain = nullptr;
+    VkSwapchainKHR swapchain = nullptr;
+    VkSwapchainKHR oldSwapchain = nullptr;
 
     VkFormat format = VK_FORMAT_B8G8R8A8_SRGB;
     VkColorSpaceKHR colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR;
@@ -26,6 +26,8 @@ private:
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> swapchainFramebuffers;
+
+    VkImageViewCreateInfo imageViewCreateInfo{};
 
 protected:
 
@@ -46,7 +48,7 @@ public:
 
     /// creating swapchain based on class variables
     void createSwapchain();
-    void createImageViews(VkImageViewCreateInfo *imageViewInfo);
+    void createImageViews();
     void createFramebuffers(HkGraphicPipeline* pGraphicPipeline);
     /// if the current extent shows valid value then return it, otherwise creating extent
     /// from surface geometry commandPoolInfo

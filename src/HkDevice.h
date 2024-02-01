@@ -31,7 +31,7 @@ struct SwapchainSupportDetails{
 class HkDevice {
 private:
     /// TODO make it pointer
-    VkInstance instance;
+    VkInstance instance = nullptr;
     VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
     VkDevice device;
 
@@ -52,7 +52,6 @@ private:
 #endif
 
 public:
-    HkDevice(std::vector<const char *> *requiredLayers, std::vector<const char *> *requiredExtensions);
     HkDevice(VkInstance instance);
     HkDevice();
 
@@ -67,7 +66,6 @@ public:
     void createInstance();
     /// create logical device
     void createLogicalDevice();
-    void createSwapchain();
 
     void setInstance(VkInstance instance);
 
@@ -75,13 +73,16 @@ public:
     void setRequiredInstanceExtensions(std::vector<const char*> *exts);
     void setRequiredDeviceExtensions(std::vector<const char*> *exts);
 
-    VkInstance getInstance();
+    VkInstance* getInstance();
     VkPhysicalDevice* getPhysicalDevice();
     std::vector<const char*>* getRequiredInstanceExtensions();
     QueueFamilyIndices* getQueueFamilyIndices();
     VkDevice* getDevice();
     VkQueue* getGraphicQueue();
     VkQueue* getPresentQueue();
+
+    void cleanup();
+    void destroyInstance();
 private:
     bool checkLayerSupport();
     /// check for required extensions availability on physical device extensions list

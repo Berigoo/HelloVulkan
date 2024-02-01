@@ -21,5 +21,5 @@ void HkSurface::setCloseSignal(bool val) {
 }
 
 void HkSurface::cleanup(VkInstance *pInstance) {
-    vkDestroySurfaceKHR(*pInstance, surface, nullptr);
+    if(surface != VK_NULL_HANDLE) vkDestroySurfaceKHR(*pInstance, surface, nullptr);
 }

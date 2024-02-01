@@ -14,11 +14,20 @@
 class HkGraphicPipeline {
 private:
     HkDevice* pDevice = nullptr;
-    HkSwapchain* pSwapchain = nullptr;
+public:
+    HkDevice *getHKDevice() const;
 
-    VkPipelineLayout* pPipelineLayout = nullptr;
-    VkPipeline* pGraphicPipeline = nullptr;
-    VkRenderPass* pRenderPass = nullptr;
+private:
+    HkSwapchain* pSwapchain = nullptr;
+public:
+    HkSwapchain *getHKSwapchain() const;
+
+private:
+
+    VkPipelineLayout pipelineLayout = nullptr;
+    VkPipeline graphicPipeline = nullptr;
+    VkRenderPass renderPass = nullptr;
+
 
 
 public:
@@ -69,6 +78,8 @@ public:
     VkPipelineLayout* getPipelineLayout();
     VkRenderPass* getRenderPass();
     VkPipeline* getPipeline();
+
+    void cleanup();
 };
 
 

@@ -14,6 +14,20 @@ HkSwapchain::HkSwapchain(HkDevice *device, HkSurface *surface, HkSyncObject *syn
     pDevice = device;
     pSurface = surface;
     pSyncObject = syncObject;
+
+
+    imageViewCreateInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    imageViewCreateInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    imageViewCreateInfo.format = format;
+    imageViewCreateInfo.components.r = VK_COMPONENT_SWIZZLE_R;
+    imageViewCreateInfo.components.g = VK_COMPONENT_SWIZZLE_G;
+    imageViewCreateInfo.components.b = VK_COMPONENT_SWIZZLE_B;
+    imageViewCreateInfo.components.a = VK_COMPONENT_SWIZZLE_A;
+    imageViewCreateInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    imageViewCreateInfo.subresourceRange.baseMipLevel = 0;
+    imageViewCreateInfo.subresourceRange.levelCount = 1;
+    imageViewCreateInfo.subresourceRange.baseArrayLayer = 0;
+    imageViewCreateInfo.subresourceRange.layerCount = 1;
 }
 
 void HkSwapchain::findSwapchainSupport() {
@@ -101,18 +115,17 @@ void HkSwapchain::createSwapchain() {
     info.preTransform = swapchainSupportInfo.capabilities.currentTransform;
     info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
     info.clipped = VK_TRUE;
-    if(oldSwapchain) info.oldSwapchain = *oldSwapchain;
+    if(oldSwapchain != VK_NULL_HANDLE) info.oldSwapchain = oldSwapchain;
     else info.oldSwapchain = VK_NULL_HANDLE;
 
-    swapchain = new VkSwapchainKHR {};
-    if(vkCreateSwapchainKHR(*pDevice->getDevice(), &info, nullptr, swapchain) != VK_SUCCESS){
+    if(vkCreateSwapchainKHR(*pDevice->getDevice(), &info, nullptr, &swapchain) != VK_SUCCESS){
         throw std::runtime_error("failed to create swapchain");
     }
 
     uint32_t imagesCount = 0;
-    vkGetSwapchainImagesKHR(*pDevice->getDevice(), *swapchain, &imagesCount, nullptr);
+    vkGetSwapchainImagesKHR(*pDevice->getDevice(), swapchain, &imagesCount, nullptr);
     swapchainImages.resize(imagesCount);
-    vkGetSwapchainImagesKHR(*pDevice->getDevice(), *swapchain, &imagesCount, swapchainImages.data());
+    vkGetSwapchainImagesKHR(*pDevice->getDevice(), swapchain, &imagesCount, swapchainImages.data());
 }
 
 void HkSwapchain::setFormat(VkFormat format1) {
@@ -127,36 +140,14 @@ void HkSwapchain::setPresentMode(VkPresentModeKHR presentMode1) {
     presentMode = presentMode1;
 }
 
-void HkSwapchain::createImageViews(VkImageViewCreateInfo *imageViewInfo) {
+void HkSwapchain::createImageViews() {
     swapchainImageViews.resize(swapchainImages.size());
-    if(imageViewInfo){
-        for(int i=0; i<swapchainImages.size(); i++){
-            imageViewInfo->image = swapchainImages[i];
-            imageViewInfo->format = format;
-            if(vkCreateImageView(*pDevice->getDevice(), imageViewInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS){
-                throw std::runtime_error("failed to create image views");
-            }
-        }
-    }else{
-        spdlog::warn("VkImageViewCreateInfo using default value");
-        for(int i=0; i<swapchainImages.size(); i++){
-            VkImageViewCreateInfo createInfo{};
-            createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-            createInfo.image = swapchainImages[i];
-            createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
-            createInfo.format = format;
-            createInfo.components.r = VK_COMPONENT_SWIZZLE_R;
-            createInfo.components.g = VK_COMPONENT_SWIZZLE_G;
-            createInfo.components.b = VK_COMPONENT_SWIZZLE_B;
-            createInfo.components.a = VK_COMPONENT_SWIZZLE_A;
-            createInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-            createInfo.subresourceRange.baseMipLevel = 0;
-            createInfo.subresourceRange.levelCount = 1;
-            createInfo.subresourceRange.baseArrayLayer = 0;
-            createInfo.subresourceRange.layerCount = 1;
-            if(vkCreateImageView(*pDevice->getDevice(), &createInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS){
-                throw std::runtime_error("failed to create image views");
-            }
+    for (int i = 0; i < swapchainImages.size(); i++) {
+
+        imageViewCreateInfo.image = swapchainImages[i];
+
+        if (vkCreateImageView(*pDevice->getDevice(), &imageViewCreateInfo, nullptr, &swapchainImageViews[i]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image views");
         }
     }
 }
@@ -213,7 +204,7 @@ HkSyncObject *HkSwapchain::getSyncObject() {
 }
 
 VkSwapchainKHR *HkSwapchain::getSwapchain() {
-    return swapchain;
+    return &swapchain;
 }
 
 void HkSwapchain::cleanup() {
@@ -221,16 +212,23 @@ void HkSwapchain::cleanup() {
         vkDestroyImageView(*pDevice->getDevice(), swapchainImageViews[i], nullptr);
         vkDestroyFramebuffer(*pDevice->getDevice(), swapchainFramebuffers[i], nullptr);
     }
-    if(oldSwapchain) vkDestroySwapchainKHR(*pDevice->getDevice(), *oldSwapchain, nullptr);
+    if(oldSwapchain != VK_NULL_HANDLE) vkDestroySwapchainKHR(*pDevice->getDevice(), oldSwapchain, nullptr);
+    vkDestroySwapchainKHR(*pDevice->getDevice(), swapchain, nullptr);
 }
 
 void HkSwapchain::recreateSwapchain(HkGraphicPipeline *pGraphicPipeline) {
     vkDeviceWaitIdle(*pDevice->getDevice());
-    cleanup();
+
+    for(int i=0; i<swapchainImages.size(); i++) {
+        vkDestroyImageView(*pDevice->getDevice(), swapchainImageViews[i], nullptr);
+        vkDestroyFramebuffer(*pDevice->getDevice(), swapchainFramebuffers[i], nullptr);
+    }
+    if(oldSwapchain != VK_NULL_HANDLE) vkDestroySwapchainKHR(*pDevice->getDevice(), oldSwapchain, nullptr);
+
     oldSwapchain = swapchain;
 
     createSwapchain();
-    createImageViews(nullptr);
+    createImageViews();
     createFramebuffers(pGraphicPipeline);
 }
 

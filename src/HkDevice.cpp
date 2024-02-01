@@ -4,43 +4,6 @@
 
 #include "HkDevice.h"
 
-HkDevice::HkDevice(std::vector<const char *> *requiredLayers, std::vector<const char *> *requiredExtensions) {
-//    this->requiredLayers = requiredLayers;
-//    this->requiredInstanceExtensions = requiredExtensions;
-//    // creating instance
-//    VkApplicationInfo appInfo{};
-//    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-//    appInfo.pApplicationName = "Basic App";
-//    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-//    appInfo.pEngineName = "Hakurei Engine";
-//    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-//    appInfo.apiVersion = VK_API_VERSION_1_0;
-//
-//    VkInstanceCreateInfo instanceCreateInfo{};
-//    instanceCreateInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-//    instanceCreateInfo.enabledLayerCount = 0;
-//    if(enableValidationLayer && checkLayerSupport()){
-//        spdlog::set_level(spdlog::level::trace);
-//        instanceCreateInfo.enabledLayerCount = static_cast<uint32_t >(requiredLayers->size());
-//        instanceCreateInfo.ppEnabledLayerNames = requiredLayers->data();
-//
-//        // debug object
-//        VkDebugUtilsMessengerCreateInfoEXT debugInfo{};
-//        debugInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-//        debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
-//        debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-//        debugInfo.pfnUserCallback = debugCallback;
-//
-//        instanceCreateInfo.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debugInfo;
-//    }
-//    instanceCreateInfo.enabledExtensionCount = static_cast<uint32_t >(requiredExtensions->size());
-//    instanceCreateInfo.ppEnabledExtensionNames = requiredExtensions->data();
-//
-//    if(vkCreateInstance(&instanceCreateInfo, nullptr, instance) != VK_SUCCESS){
-//        throw std::runtime_error("failed to create vulkan instance");
-//    }
-}
-
 bool HkDevice::checkLayerSupport() {
     if(requiredLayers == nullptr) return false;
     uint32_t propCount = 0;
@@ -240,8 +203,8 @@ void HkDevice::createInstance() {
     }
 }
 
-VkInstance HkDevice::getInstance() {
-    return instance;
+VkInstance* HkDevice::getInstance() {
+    return &instance;
 }
 
 void HkDevice::createLogicalDevice() {
@@ -285,10 +248,6 @@ void HkDevice::createLogicalDevice() {
     vkGetDeviceQueue(device, indices.presentFamily.value(), 0, &presentQueue);
 }
 
-void HkDevice::createSwapchain() {
-
-}
-
 QueueFamilyIndices *HkDevice::getQueueFamilyIndices() {
     return &indices;
 }
@@ -307,6 +266,16 @@ VkQueue *HkDevice::getPresentQueue() {
 
 void HkDevice::setInstance(VkInstance instance) {
     this->instance = instance;
+}
+
+void HkDevice::cleanup() {
+    if(device != VK_NULL_HANDLE)
+        vkDestroyDevice(device, nullptr);
+}
+
+void HkDevice::destroyInstance() {
+    if(instance != VK_NULL_HANDLE)
+        vkDestroyInstance(instance, nullptr);
 }
 
 VkBool32

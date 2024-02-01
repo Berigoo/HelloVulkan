@@ -41,12 +41,15 @@ void XcbSurface::updateWindowProperty(std::string property, std::string changeIn
     xcb_intern_atom_cookie_t propCookie = internAtomCookie(property);
     xcb_atom_t propAtom = internAtom(propCookie);
     xcb_intern_atom_cookie_t chgCookie = internAtomCookie(changeInto);
+    xcb_atom_t chgAtom = internAtom(chgCookie);
 
+    std::vector<xcb_atom_t> tmp(2);
+    tmp[0] = propAtom;
+    tmp[1] = chgAtom;
     // TODO add exception for multiple same name
-    //  make atoms has unique key name
-    atoms.insert(std::pair<std::string, xcb_atom_t>(name, internAtom(chgCookie)));
+    atoms.insert(std::pair<std::string, std::vector<xcb_atom_t>>(name, tmp));
 
-    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, windowId, propAtom, XCB_ATOM_ATOM, 32, 1, &atoms[name]);
+    xcb_change_property(conn, XCB_PROP_MODE_REPLACE, windowId, atoms.at(name)[0], XCB_ATOM_ATOM, 32, 1, &atoms.at(name)[1]);
 }
 
 void XcbSurface::createSurface(HkDevice *hkDevice) {
@@ -54,7 +57,7 @@ void XcbSurface::createSurface(HkDevice *hkDevice) {
     info.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
     info.connection = conn;
     info.window = windowId;
-    if(vkCreateXcbSurfaceKHR(hkDevice->getInstance(), &info, nullptr, &surface) != VK_SUCCESS){
+    if(vkCreateXcbSurfaceKHR(*hkDevice->getInstance(), &info, nullptr, &surface) != VK_SUCCESS){
         throw std::runtime_error("failed create xcb surface!");
     }
 }
@@ -98,4 +101,14 @@ VkExtent2D XcbSurface::getSurfaceExtent() {
 
 XcbSurface::~XcbSurface() {
 
+}
+
+void XcbSurface::cleanup(VkInstance *pInstance) {
+    HkSurface::cleanup(pInstance);
+    xcb_destroy_window(conn, windowId);
+    xcb_disconnect(conn);
+}
+
+std::map<std::string, std::vector<xcb_atom_t>> *XcbSurface::getAtoms() {
+    return &atoms;
 }

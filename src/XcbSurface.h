@@ -20,7 +20,7 @@ private:
     xcb_screen_t* screen;
     xcb_window_t windowId;
 
-    std::map<std::string, xcb_atom_t> atoms;
+    std::map<std::string, std::vector<xcb_atom_t>> atoms;
 public:
     /// creating essential xcb
     /// \param width
@@ -39,12 +39,13 @@ public:
     /// \param instance vulkan instance
     void createSurface(HkDevice *hkDevice);
 
-
+    void cleanup(VkInstance *pInstance) override;
 
     VkSurfaceKHR* getSurface() override;
     xcb_connection_t* getConnection();
     xcb_window_t* getWindow();
     VkExtent2D getSurfaceExtent() override;
+    std::map<std::string, std::vector<xcb_atom_t>>* getAtoms();
 private:
     /// retrieve atom cookie
     /// \param str the name of atom (ex: WM_DELETE_WINDOW, WM_PROTOCOLS)

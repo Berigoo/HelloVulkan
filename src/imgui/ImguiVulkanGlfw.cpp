@@ -19,13 +19,12 @@ void ImguiVulkanGlfw::init() {
 
     ImGui_ImplGlfw_InitForVulkan(dynamic_cast<GlfwSurface*>(pSurface)->getWindow(), true);
     ImGui_ImplVulkan_InitInfo initInfo{};
-    initInfo.Instance = pDevice->getInstance();
+    initInfo.Instance = *pDevice->getInstance();
     initInfo.PhysicalDevice = *pDevice->getPhysicalDevice();
     initInfo.Device = *pDevice->getDevice();
     initInfo.QueueFamily = *pDevice->getQueueFamilyIndices()->graphicFamily;
     initInfo.Queue = *pDevice->getGraphicQueue();
     initInfo.PipelineCache = VK_NULL_HANDLE;
-    VkDescriptorPool descriptorPool1;
     VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
     VkDescriptorPoolSize poolSize[] = {VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1};
     descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -33,10 +32,10 @@ void ImguiVulkanGlfw::init() {
     descriptorPoolCreateInfo.maxSets = 1;
     descriptorPoolCreateInfo.poolSizeCount = (uint32_t) IM_ARRAYSIZE(poolSize);
     descriptorPoolCreateInfo.pPoolSizes = poolSize;
-    if(vkCreateDescriptorPool(*pDevice->getDevice(), &descriptorPoolCreateInfo, nullptr, &descriptorPool1) != VK_SUCCESS){
+    if(vkCreateDescriptorPool(*pDevice->getDevice(), &descriptorPoolCreateInfo, nullptr, &descriptorPool) != VK_SUCCESS){
         throw std::runtime_error("ImGui failed to create descriptor pool");
     }
-    initInfo.DescriptorPool = descriptorPool1;
+    initInfo.DescriptorPool = descriptorPool;
     initInfo.Subpass = 0;
     initInfo.MinImageCount = minImageCount;
     initInfo.ImageCount = windowData.ImageCount;
@@ -77,7 +76,7 @@ minImageCount) {
 
     // Create SwapChain, RenderPass, Framebuffer, etc.
     IM_ASSERT(minImageCount >= 2);
-    ImGui_ImplVulkanH_CreateOrResizeWindow(pDevice->getInstance(), physicalDevice, *pDevice->getDevice(), wd, pDevice->getQueueFamilyIndices()->graphicFamily.value(),
+    ImGui_ImplVulkanH_CreateOrResizeWindow(*pDevice->getInstance(), physicalDevice, *pDevice->getDevice(), wd, pDevice->getQueueFamilyIndices()->graphicFamily.value(),
                                            nullptr, width, height, minImageCount);
 }
 
@@ -172,7 +171,7 @@ void ImguiVulkanGlfw::resizeSwapchain() {
         glfwGetFramebufferSize(dynamic_cast<GlfwSurface *>(pSurface)->getWindow(), &width, &height);
         if (width > 0 && height > 0) {
             ImGui_ImplVulkan_SetMinImageCount(minImageCount);
-            ImGui_ImplVulkanH_CreateOrResizeWindow(pDevice->getInstance(), *pDevice->getPhysicalDevice(),
+            ImGui_ImplVulkanH_CreateOrResizeWindow(*pDevice->getInstance(), *pDevice->getPhysicalDevice(),
                                                    *pDevice->getDevice(), &windowData,
                                                    pDevice->getQueueFamilyIndices()->graphicFamily.value(),
                                                    nullptr, width, height, minImageCount);
@@ -209,4 +208,19 @@ void ImguiVulkanGlfw::framePresent() {
     }
     check_vk_result(err);
     windowData.SemaphoreIndex = (windowData.SemaphoreIndex + 1) % windowData.ImageCount;
+}
+
+void ImguiVulkanGlfw::cleanup(VkInstance instance, VkDevice device, VkSurfaceKHR *surface) {
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
+    ImGui_ImplVulkanH_DestroyWindow(instance, device, &windowData, nullptr);
+
+    vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+
+    // imgui implicitly destroy the Surface that VkSurface pointed to, so the surface from HkSurface
+    // must be returned to null, to prevent dangling pointer
+    *surface = VK_NULL_HANDLE;
+    device = VK_NULL_HANDLE;
 }
