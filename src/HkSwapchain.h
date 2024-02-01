@@ -26,13 +26,10 @@ private:
     std::vector<VkImage> swapchainImages;
     std::vector<VkImageView> swapchainImageViews;
     std::vector<VkFramebuffer> swapchainFramebuffers;
-
-    VkImageViewCreateInfo imageViewCreateInfo{};
-
-protected:
-
 public:
     HkSwapchain(HkDevice *device, HkSurface *surface, HkSyncObject *syncObject);
+
+    VkImageViewCreateInfo imageViewCreateInfo{};
 
     void setFormat(VkFormat format1);
     void setColorSpace(VkColorSpaceKHR colorSpace1);
